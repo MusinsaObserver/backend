@@ -1,4 +1,4 @@
-package observer.backend.security.
+package observer.backend.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
