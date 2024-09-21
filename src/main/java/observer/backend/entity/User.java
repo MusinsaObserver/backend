@@ -15,17 +15,15 @@ public class User {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long userId;
 
-	@Column(nullable = false, unique = true)
-	private String email;
+	@Column(name = "provider", nullable = false)
+	private String provider; // OAuth2 제공자 이름 (예: "apple")
 
-	@Column(name = "provider")
-	private String provider; // OAuth2 제공자 이름
+	@Column(name = "provider_id", unique = true, nullable = false)
+	private String providerId; // Apple에서 제공하는 사용자 고유 ID (sub)
 
-	@Column(name = "provider_id")
-	private String providerId; // OAuth2 사용자 ID
+	@Column(name = "device_token")
+	private String deviceToken;
 
-	// 테스트용 생성자
-	public User(String email) {
-		this.email = email;
-	}
+	@Column(name = "email")
+	private String email; // 이메일 필드 추가 (최초 로그인 시에만 저장)
 }

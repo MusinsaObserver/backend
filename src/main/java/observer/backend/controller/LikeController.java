@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import observer.backend.entity.Product;
 import observer.backend.entity.User;
 import observer.backend.response.ApiResponse;
 import observer.backend.service.LikeService;
+import observer.backend.service.UserService;
 
 @RestController
 @RequestMapping("/api/likes")
@@ -25,6 +27,7 @@ import observer.backend.service.LikeService;
 public class LikeController {
 
 	private final LikeService likeService;
+	private final UserService userService; // UserService 주입
 
 	// 특정 상품을 찜하기
 	@PostMapping("/product/{productId}")
@@ -55,8 +58,9 @@ public class LikeController {
 
 	// Authentication에서 userId를 가져오는 유틸리티 메서드
 	private Long getUserIdFromAuthentication(Authentication authentication) {
-		String email = authentication.getName();
-		User user = userService.findByEmail(email)
+		OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+		String providerId = (String) oAuth2User.getAttribute("sub"); // Apple의 고유 식별자
+		User user = userService.findByAppleUserId(providerId)
 			.orElseThrow(() -> new RuntimeException("User not found"));
 		return user.getUserId();
 	}
