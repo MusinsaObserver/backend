@@ -28,12 +28,10 @@ public class ProductController {
   private final ProductService productService;
 
   @PostMapping("/crawling")
-  public ResponseEntity<?> crawlProduct(){
+  public ResponseEntity<?> crawlProduct() {
     productService.crawlProduct();
     return ResponseEntity.ok(ApiResponse.ok("크롤링 및 DB 저장 성공", null));
   }
-
-
 
 
   @PostMapping("/create")
@@ -50,10 +48,10 @@ public class ProductController {
   }
 
   @GetMapping("/autoComplete")
-  public ResponseEntity<?> autoComplete(@RequestParam(name = "query") String query){
+  public ResponseEntity<?> autoComplete(@RequestParam(name = "query") String query) {
     List<String> autoCompleteList = productService.autoComplete(query);
     System.out.println(autoCompleteList);
-    return ResponseEntity.ok(ApiResponse.ok("자동 완성 성공",autoCompleteList));
+    return ResponseEntity.ok(ApiResponse.ok("자동 완성 성공", autoCompleteList));
   }
 
   @GetMapping("/search")
@@ -75,7 +73,7 @@ public class ProductController {
     return ResponseEntity.ok(ApiResponse.ok("제품 세부사항 검색 성공", productResponseDto));
   }
 
-//  @GetMapping("/{productId}/recommendations")
+  //  @GetMapping("/{productId}/recommendations")
 //  public ResponseEntity<String> getRecommendations(@PathVariable Long productId) {
 //    // productId로 제품명 조회
 //    String productName = productService.getProductNameById(productId);
