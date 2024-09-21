@@ -24,6 +24,11 @@ public class ProductService {
   private final ProductRepository productRepository;
   private final PriceHistoryRepository priceHistoryRepository;
   private final LikeService likeService;
+  private final CrawlerService crawlerService;
+
+  public void crawlProduct() {
+    List<String[]> crawlingList = crawlerService.parallelCrawling();
+  }
 
   public void createProduct(List<Product> productList) {
     for (Product product : productList) {
@@ -96,4 +101,5 @@ public class ProductService {
     return productRepository.findTop10ByProductNameContaining(query).stream()
         .map(Product::getProductName).toList();
   }
+
 }

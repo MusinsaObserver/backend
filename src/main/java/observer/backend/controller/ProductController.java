@@ -6,6 +6,7 @@ import observer.backend.dto.ProductResponseDto;
 import observer.backend.entity.PriceHistory;
 import observer.backend.entity.Product;
 import observer.backend.response.ApiResponse;
+import observer.backend.service.CrawlerService;
 import observer.backend.service.ProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,7 +27,15 @@ public class ProductController {
 
   private final ProductService productService;
 
-  // 테스트 하려고 넣음 실제로는 파이썬에서 db에 제품 정보 넣을 듯
+  @PostMapping("/crawling")
+  public ResponseEntity<?> crawlProduct(){
+    productService.crawlProduct();
+    return ResponseEntity.ok(ApiResponse.ok("크롤링 및 DB 저장 성공", null));
+  }
+
+
+
+
   @PostMapping("/create")
   public ResponseEntity<?> createProduct(@RequestBody List<Product> productList) {
     productService.createProduct(productList);
