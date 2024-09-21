@@ -18,6 +18,7 @@ import observer.backend.entity.Product;
 import observer.backend.entity.User;
 import observer.backend.response.ApiResponse;
 import observer.backend.service.LikeService;
+import observer.backend.service.UserService;
 
 @RestController
 @RequestMapping("/api/likes")
@@ -25,6 +26,7 @@ import observer.backend.service.LikeService;
 public class LikeController {
 
 	private final LikeService likeService;
+	private final UserService userService;
 
 	// 특정 상품을 찜하기
 	@PostMapping("/product/{productId}")
