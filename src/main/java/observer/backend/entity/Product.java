@@ -30,6 +30,9 @@ public class Product {
   @Column(nullable = false, unique = false)
   private String brand;
 
+  @Column(nullable = false, unique = true)
+  private String productCode;
+
   @Column(nullable = false, unique = false)
   private String productName;
 
@@ -55,6 +58,7 @@ public class Product {
   List<PriceHistory> priceHistoryList = new ArrayList<>();
 
   public void update(Product product) {
+    this.productCode = product.getProductCode();
     this.brand = product.getBrand();
     this.productName= product.getProductName();
     this.category = product.getCategory();
