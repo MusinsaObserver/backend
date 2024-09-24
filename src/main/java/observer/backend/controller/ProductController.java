@@ -82,10 +82,10 @@ public class ProductController {
 //    String recommendations = pythonService.getRecommendations(productName);
 //    return ResponseEntity.ok(recommendations);
 //  }
-  @GetMapping("/{productId}/category")
-  public ResponseEntity<?> getProductCategory(@PathVariable Long productId) {
-    String category = productService.getProductCategory(productId);
-    return ResponseEntity.ok(ApiResponse.ok("제품 카테고리 조회 성공", category));
-  }
+//  @GetMapping("/{productId}/category")
+//  public ResponseEntity<?> getProductCategory(@PathVariable Long productId) {
+//    String category = productService.getProductCategory(productId);
+//    return ResponseEntity.ok(ApiResponse.ok("제품 카테고리 조회 성공", category));
+//  }
 
 }

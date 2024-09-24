@@ -1,6 +1,7 @@
 package observer.backend.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -28,32 +29,31 @@ public class ProductService {
 
   public void crawlProduct() {
     List<String[]> crawlingList = crawlerService.parallelCrawling();
+    List<Product> productList = new ArrayList<>();
+    for (String[] strings : crawlingList) {
+      String productCode = strings[0];
+      String brand = strings[2];
+      String productName = strings[3];
+      Integer price = Integer.valueOf(strings[4]);
+      Integer discountRate = Integer.valueOf(strings[5]);
+      Integer originalPrice = Integer.valueOf(strings[6]);
+      String productURL = strings[7];
+      String imageURL = strings[8];
+      Product product = new Product(productCode, brand, productName, price, discountRate,
+          originalPrice, productURL, imageURL);
+      productList.add(product);
+    }
+    //createProduct(productList);
+    productRepository.saveAll(productList);
   }
 
   public void createProduct(List<Product> productList) {
     for (Product product : productList) {
-      Optional<Product> existingProductOptional = productRepository.findByProductURL(
-          product.getProductURL());
-      Optional<PriceHistory> existingPriceHistoryOptional = priceHistoryRepository.findByDate(
-          LocalDate.now());
+      Optional<Product> existingProductOptional = productRepository.findByProductCode(
+          product.getProductCode());
 
-      if (existingProductOptional.isPresent()) {
-        Product existingProduct = existingProductOptional.get();
-        existingProduct.update(product);
-        productRepository.save(existingProduct);
-        if (existingPriceHistoryOptional.isEmpty()) {
-          PriceHistory priceHistory = new PriceHistory(LocalDate.now(), product.getPrice(),
-              product);
-          priceHistoryRepository.save(priceHistory);
-          boolean isPriceDropped = existingProduct.getPrice() > priceHistory.getPrice();
-          if (isPriceDropped) {
-            likeService.notifyPriceDrop(product.getId());
-          }
-        }
-      } else {
+      if (existingProductOptional.isEmpty()) {
         productRepository.save(product);
-        PriceHistory priceHistory = new PriceHistory(LocalDate.now(), product.getPrice(), product);
-        priceHistoryRepository.save(priceHistory);
       }
     }
   }
@@ -91,11 +91,11 @@ public class ProductService {
         .orElseThrow(
             () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
   }
-  public String getProductCategory(Long productId) {
-    Product product = productRepository.findById(productId)
-        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
-    return product.getCategory();
-  }
+//  public String getProductCategory(Long productId) {
+//    Product product = productRepository.findById(productId)
+//        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
+//    return product.getCategory();
+//  }
 
   public List<String> autoComplete(String query) {
     return productRepository.findTop10ByProductNameContaining(query).stream()

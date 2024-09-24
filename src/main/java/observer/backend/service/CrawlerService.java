@@ -44,7 +44,7 @@ public class CrawlerService {
     public List<String[]> ajaxCrawling(String category, String baseUrl) {
         List<String[]> result = new ArrayList<>();
         System.out.println(category + " 카테고리 크롤링 시작...");
-        int n = 5; // n개의 페이지, 1페이지당 30개의 상품 존재, 모든상품 크롤링시에는 9999999 주면됨, 데이터 없으면 알아서 끊김
+        int n = 10000; // n개의 페이지, 1페이지당 30개의 상품 존재, 모든상품 크롤링시에는 9999999 주면됨, 데이터 없으면 알아서 끊김
 
         try {
             for (int page = 1; page < n; page++) { // 각 카테고리에서 최대 n 페이지까지 크롤링
@@ -75,7 +75,7 @@ public class CrawlerService {
                                 item.get("brandName").getAsString(),
                                 item.get("goodsName").getAsString(),
                                 String.valueOf(item.get("price").getAsInt()),
-                                item.get("saleRate").getAsString() + "%",
+                                item.get("saleRate").getAsString(),
                                 String.valueOf(item.get("normalPrice").getAsInt()),
                                 item.get("goodsLinkUrl").getAsString(),
                                 item.get("thumbnail").getAsString()
@@ -119,6 +119,7 @@ public class CrawlerService {
         } finally {
             executorService.shutdown(); // 스레드 풀 종료
         }
+
 
         return allResults; // 모든 카테고리의 결과를 반환
     }

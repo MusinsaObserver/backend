@@ -49,7 +49,7 @@ public class SecurityConfig {
 			)
 			.authorizeHttpRequests(authorize ->
 				authorize
-					.requestMatchers("/", "/login/**", "/oauth2/**", "/api/public/**").permitAll() // 공용 경로 허용
+					.requestMatchers("/", "/login/**", "/oauth2/**", "/api/public/**","/api/product/**").permitAll() // 공용 경로 허용
 					.anyRequest().authenticated() // 그 외의 모든 요청은 인증 필요
 			)
 			.oauth2Login(oauth2 -> oauth2

@@ -15,12 +15,11 @@ public class ProductResponseDto {
   private String brand;
   private String productName;
   private Integer price;
-  private String discountRate;
+  private Integer discountRate;
   private Integer originalPrice;
   private String productURL;
   private String imageURL;
   private List<PriceHistory> priceHistoryList;
-  private String category;
 
   public ProductResponseDto(Product product){
     this.id = product.getId();
@@ -33,6 +32,5 @@ public class ProductResponseDto {
     this.productURL = product.getProductURL();
     this.priceHistoryList = product.getPriceHistoryList();
     this.imageURL = product.getImageURL();
-    this.category = product.getCategory();
   }
 }

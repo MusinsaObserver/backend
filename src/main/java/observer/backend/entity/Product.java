@@ -28,10 +28,10 @@ public class Product {
   private Long id;
 
   @Column(nullable = false, unique = false)
-  private String brand;
-
-  @Column(nullable = false, unique = true)
   private String productCode;
+
+  @Column(nullable = false, unique = false)
+  private String brand;
 
   @Column(nullable = false, unique = false)
   private String productName;
@@ -40,7 +40,7 @@ public class Product {
   private Integer price;
 
   @Column(nullable = false, unique = false)
-  private String discountRate;
+  private Integer discountRate;
 
   @Column(nullable = false, unique = false)
   private Integer originalPrice;
@@ -51,17 +51,26 @@ public class Product {
   @Column(nullable = false, unique = false)
   private String imageURL;
 
-  @Column(nullable = false, unique = false)
-  private String category;
 
   @OneToMany(mappedBy = "product")
   List<PriceHistory> priceHistoryList = new ArrayList<>();
 
+  public Product(String productCode, String brand, String productName, Integer price, Integer discountRate, Integer originalPrice, String productURL, String imageURL) {
+    this.productCode = productCode;
+    this.brand = brand;
+    this.productName = productName;
+    this.price = price;
+    this.originalPrice =originalPrice;
+    this.discountRate = discountRate;
+    this.imageURL = imageURL;
+    this.productURL = productURL;
+  }
+
+
   public void update(Product product) {
     this.productCode = product.getProductCode();
     this.brand = product.getBrand();
-    this.productName= product.getProductName();
-    this.category = product.getCategory();
+    this.productName = product.getProductName();
     this.price = product.getPrice();
     this.originalPrice = product.getOriginalPrice();
     this.discountRate = product.getDiscountRate();
