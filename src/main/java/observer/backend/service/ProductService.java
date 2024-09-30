@@ -2,7 +2,9 @@ package observer.backend.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import observer.backend.dto.ProductResponseDto;
@@ -43,33 +45,27 @@ public class ProductService {
           originalPrice, productURL, imageURL);
       productList.add(product);
     }
-    //createProduct(productList);
-    productRepository.saveAll(productList);
+    createProduct(productList);
   }
 
   public void createProduct(List<Product> productList) {
     for (Product product : productList) {
       Optional<Product> existingProductOptional = productRepository.findByProductCode(
           product.getProductCode());
-
-      if (existingProductOptional.isEmpty()) {
+      if (existingProductOptional.isEmpty()) { // 만약 product가 존재하지 않는다면 product, priceHistory 저장
         productRepository.save(product);
+        PriceHistory priceHistory = new PriceHistory(LocalDate.now(), product.getPrice(), product);
+        priceHistoryRepository.save(priceHistory);
+      } else { // 이미 product가 존재한다면 priceHistory 검색
+        PriceHistory priceHistory = priceHistoryRepository.findByProductId(
+            existingProductOptional.get().getId());
+        if (!Objects.equals(priceHistory.getPrice(),
+            product.getPrice())) { // priceHistory의 가격과 product의 가격이 다를 경우 새로운 priceHistory 저장
+          priceHistoryRepository.save(
+              new PriceHistory(LocalDate.now(), product.getPrice(), product));
+          likeService.notifyPriceDrop(product.getId());
+        }
       }
-    }
-  }
-
-  public void createPriceHistory(PriceHistory priceHistory, Long productId) {
-    Product product = productRepository.findById(productId)
-        .orElseThrow(
-            () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
-
-    boolean isPriceDropped = product.getPrice() > priceHistory.getPrice();
-
-    priceHistory.setProduct(product);
-    priceHistoryRepository.save(priceHistory);
-
-    if (isPriceDropped) {
-      likeService.notifyPriceDrop(productId);
     }
   }
 
@@ -80,26 +76,7 @@ public class ProductService {
   }
 
   public ProductResponseDto searchProduct(Long productId) {
-    return new ProductResponseDto(productRepository.findById(productId)
-        .orElseThrow(
-            () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT)));
+    return new ProductResponseDto(productRepository.findById(productId).orElseThrow(
+        () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT)));
   }
-
-  public String getProductNameById(Long productId) {
-    return productRepository.findById(productId)
-        .map(Product::getProductName)
-        .orElseThrow(
-            () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
-  }
-//  public String getProductCategory(Long productId) {
-//    Product product = productRepository.findById(productId)
-//        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
-//    return product.getCategory();
-//  }
-
-  public List<String> autoComplete(String query) {
-    return productRepository.findTop10ByProductNameContaining(query).stream()
-        .map(Product::getProductName).toList();
-  }
-
 }
