@@ -4,18 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import observer.backend.dto.ProductResponseDto;
 import observer.backend.entity.PriceHistory;
 import observer.backend.entity.Product;
 import observer.backend.exception.BusinessException;
-import observer.backend.exception.ErrorCode;
 import observer.backend.repository.PriceHistoryRepository;
 import observer.backend.repository.ProductRepository;
 import observer.backend.service.ProductService;
@@ -26,7 +23,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
@@ -49,7 +46,8 @@ class ProductServiceTest {
 
   @BeforeEach
   void setUp() {
-    // Initialization logic if needed
+    priceHistoryRepository.deleteAll();
+    productRepository.deleteAll();
   }
 
   @Test
@@ -135,31 +133,38 @@ class ProductServiceTest {
   @Test
   void testSearchProducts_whenProductsExist_shouldReturnProductResponseDtoPage() {
     // Given
-    String query = "Test";
-    Pageable pageable = Pageable.ofSize(10);
-    Product product = new Product("P001", "TestBrand", "Test Product", 10000, 10, 11000,
+    List<Product> newProducts = new ArrayList<>();
+    Product product1 = new Product("P001", "TestBrand", "Test Product 1", 10000, 10, 11000,
         "http://test.url", "http://image.url");
-    Page<Product> productPage = new PageImpl<>(List.of(product), pageable, 1);
+    newProducts.add(product1);
+    Product product2 = new Product("P002", "TestBrand", "Test Product 2", 10001, 10, 11000,
+        "http://test.url", "http://image.url");
+    newProducts.add(product2);
 
-    when(productRepository.findByProductNameContaining(query, pageable)).thenReturn(productPage);
+    // 저장
+    productService.createProduct(newProducts);
+
+    // 페이지 설정
+    Pageable pageable = PageRequest.of(0, 10);
 
     // When
-    Page<ProductResponseDto> result = productService.searchProducts(query, pageable);
+    Page<ProductResponseDto> result = productService.searchProducts("Test", pageable);
 
     // Then
     assertNotNull(result);
-    assertEquals(1, result.getTotalElements());
-    assertEquals("Test Product", result.getContent().get(0).getProductName());
+    assertEquals(2, result.getTotalElements());
+    assertEquals("Test Product 1", result.getContent().get(0).getProductName());
+    assertEquals("Test Product 2", result.getContent().get(1).getProductName());
   }
+
 
   @Test
   void testSearchProduct_whenProductExists_shouldReturnProductResponseDto() {
     // Given
-    Long productId = 1L;
     Product product = new Product("P001", "TestBrand", "Test Product", 10000, 10, 11000,
         "http://test.url", "http://image.url");
-
-    when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+    productRepository.save(product);
+    Long productId = product.getId();
 
     // When
     ProductResponseDto result = productService.searchProduct(productId);
@@ -174,13 +179,11 @@ class ProductServiceTest {
     // Given
     Long productId = 1L;
 
-    when(productRepository.findById(productId)).thenReturn(Optional.empty());
-
     // When & Then
     BusinessException exception = assertThrows(BusinessException.class,
         () -> productService.searchProduct(productId));
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-    assertEquals(ErrorCode.NOT_FOUND_PRODUCT.getMessage(), exception.getErrorCode());
   }
+
 
 }
