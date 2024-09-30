@@ -52,22 +52,30 @@ public class ProductService {
     for (Product product : productList) {
       Optional<Product> existingProductOptional = productRepository.findByProductCode(
           product.getProductCode());
-      if (existingProductOptional.isEmpty()) { // 만약 product가 존재하지 않는다면 product, priceHistory 저장
-        productRepository.save(product);
+
+      if (existingProductOptional.isEmpty()) {
+        // 새로운 Product인 경우
+        productRepository.save(product); // 새로운 Product 저장
         PriceHistory priceHistory = new PriceHistory(LocalDate.now(), product.getPrice(), product);
-        priceHistoryRepository.save(priceHistory);
-      } else { // 이미 product가 존재한다면 priceHistory 검색
-        PriceHistory priceHistory = priceHistoryRepository.findByProductId(
-            existingProductOptional.get().getId());
-        if (!Objects.equals(priceHistory.getPrice(),
-            product.getPrice())) { // priceHistory의 가격과 product의 가격이 다를 경우 새로운 priceHistory 저장
-          priceHistoryRepository.save(
-              new PriceHistory(LocalDate.now(), product.getPrice(), product));
-          likeService.notifyPriceDrop(product.getId());
+        priceHistoryRepository.save(priceHistory); // PriceHistory 저장
+      } else {
+        // 기존 Product인 경우
+        Product existingProduct = existingProductOptional.get();
+        if (!Objects.equals(existingProduct.getPrice(), product.getPrice())) {
+          // 가격이 다른 경우
+          existingProduct.setPrice(product.getPrice()); // 가격 업데이트
+          productRepository.save(existingProduct); // 업데이트된 Product 저장
+
+          // PriceHistory를 저장할 때, existingProduct를 사용
+          PriceHistory priceHistory = new PriceHistory(LocalDate.now(), product.getPrice(),
+              existingProduct);
+          priceHistoryRepository.save(priceHistory); // 새로운 PriceHistory 저장
+          likeService.notifyPriceDrop(existingProduct.getId()); // 가격 변화 알림
         }
       }
     }
   }
+
 
   public Page<ProductResponseDto> searchProducts(String query, Pageable pageable) {
     Page<Product> productPage = productRepository.findByProductNameContaining(query, pageable);
@@ -79,4 +87,6 @@ public class ProductService {
     return new ProductResponseDto(productRepository.findById(productId).orElseThrow(
         () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT)));
   }
+
+
 }
