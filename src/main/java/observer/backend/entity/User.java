@@ -14,7 +14,7 @@ public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long userId;
-
+  
 	@Column(name = "provider", nullable = false)
 	private String provider; // OAuth2 제공자 이름 (예: "apple")
 

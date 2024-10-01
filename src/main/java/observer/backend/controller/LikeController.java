@@ -27,7 +27,8 @@ import observer.backend.service.UserService;
 public class LikeController {
 
 	private final LikeService likeService;
-	private final UserService userService; // UserService 주입
+  
+	private final UserService userService;
 
 	// 특정 상품을 찜하기
 	@PostMapping("/product/{productId}")
