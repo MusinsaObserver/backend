@@ -14,21 +14,12 @@ public class UserService {
 		this.userRepository = userRepository;
 	}
 
-	// 사용자 정보를 저장하는 메서드
 	public User save(User user) {
 		return userRepository.save(user);
 	}
 
-	// providerId를 통해 Apple 사용자를 찾는 메서드
 	public Optional<User> findByAppleUserId(String providerId) {
 		return userRepository.findByProviderId(providerId);
-	}
-
-	// 사용자 ID를 통해 사용자를 삭제하는 메서드
-	public void deleteUserById(Long userId) {
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-		userRepository.delete(user);
 	}
 
 	public Long getUserId() {

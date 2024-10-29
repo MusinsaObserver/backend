@@ -26,13 +26,7 @@ public class UserController {
 		String providerId = getProviderIdFromAuthentication(authentication);
 		User user = userService.findByAppleUserId(providerId)
 			.orElseThrow(() -> new RuntimeException("User not found"));
-		return ResponseEntity.ok(new UserDto(user.getUserId(), user.getProviderId()));
-	}
-
-	@DeleteMapping("/{userId}")
-	public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
-		userService.deleteUserById(userId);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.ok(new UserDto(user.getUserId()));
 	}
 
 	// 로그인된 사용자의 providerId 반환
@@ -42,7 +36,7 @@ public class UserController {
 		String providerId = getProviderIdFromAuthentication(authentication);
 		User user = userService.findByAppleUserId(providerId)
 			.orElseThrow(() -> new RuntimeException("User not found"));
-		return ResponseEntity.ok(new UserDto(user.getUserId(), user.getProviderId()));
+		return ResponseEntity.ok(new UserDto(user.getUserId()));
 	}
 
 	@GetMapping("/id")

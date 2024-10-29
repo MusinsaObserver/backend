@@ -1,6 +1,7 @@
 package observer.backend.service;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -27,18 +27,15 @@ public class ProductService {
 
   public void createProduct(List<Product> productList) {
     for (Product product : productList) {
-      Optional<Product> existingProductOptional = productRepository.findByProductURL(
-          product.getProductURL());
-      Optional<PriceHistory> existingPriceHistoryOptional = priceHistoryRepository.findByDate(
-          LocalDate.now());
+      Optional<Product> existingProductOptional = productRepository.findByProductURL(product.getProductURL());
+      Optional<PriceHistory> existingPriceHistoryOptional = priceHistoryRepository.findByDate(LocalDate.now());
 
       if (existingProductOptional.isPresent()) {
         Product existingProduct = existingProductOptional.get();
         existingProduct.update(product);
         productRepository.save(existingProduct);
         if (existingPriceHistoryOptional.isEmpty()) {
-          PriceHistory priceHistory = new PriceHistory(LocalDate.now(), product.getPrice(),
-              product);
+          PriceHistory priceHistory = new PriceHistory(LocalDate.now(), product.getPrice(), product);
           priceHistoryRepository.save(priceHistory);
           boolean isPriceDropped = existingProduct.getPrice() > priceHistory.getPrice();
           if (isPriceDropped) {
@@ -55,8 +52,7 @@ public class ProductService {
 
   public void createPriceHistory(PriceHistory priceHistory, Long productId) {
     Product product = productRepository.findById(productId)
-        .orElseThrow(
-            () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
+        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
 
     boolean isPriceDropped = product.getPrice() > priceHistory.getPrice();
 
@@ -69,23 +65,51 @@ public class ProductService {
   }
 
   public Page<ProductResponseDto> searchProducts(String query, Pageable pageable) {
-    Page<Product> productPage = productRepository.findByProductNameContaining(query, pageable);
+    Page<Product> productPage = productRepository.searchByMultipleFields(query, pageable);
 
-    return productPage.map(ProductResponseDto::new);
+    // Using lambda expression to explicitly map Product to ProductResponseDto
+    return productPage.map(product -> {
+      // Fetch the price history
+      List<PriceHistory> fullPriceHistory = priceHistoryRepository.findByProductId(product.getId());
+      LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+      List<PriceHistory> threeMonthHistory = fullPriceHistory.stream()
+          .filter(history -> history.getDate().isAfter(threeMonthsAgo))
+          .toList();
+
+      Integer highestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).max(Integer::compare).orElse(product.getPrice());
+      Integer lowestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).min(Integer::compare).orElse(product.getPrice());
+
+      Date favoriteDate = null;  // Logic to fetch favoriteDate from the Like entity can be added here
+
+      return ProductResponseDto.fromEntity(product, threeMonthHistory, highestPrice, lowestPrice, favoriteDate);
+    });
   }
 
   public ProductResponseDto searchProduct(Long productId) {
-    return new ProductResponseDto(productRepository.findById(productId)
-        .orElseThrow(
-            () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT)));
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
+
+    // Fetch the price history for the product
+    List<PriceHistory> fullPriceHistory = priceHistoryRepository.findByProductId(productId);
+
+    // Filter for the last 3 months
+    LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+    List<PriceHistory> threeMonthHistory = fullPriceHistory.stream()
+        .filter(history -> history.getDate().isAfter(threeMonthsAgo))
+        .toList();
+
+    // Calculate highest and lowest prices in the full price history
+    Integer highestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).max(Integer::compare).orElse(product.getPrice());
+    Integer lowestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).min(Integer::compare).orElse(product.getPrice());
+
+    // Find the favorite date if necessary
+    Date favoriteDate = null;  // Logic to fetch favoriteDate from the Like entity can be added here
+
+    // Return the DTO with all necessary fields
+    return ProductResponseDto.fromEntity(product, threeMonthHistory, highestPrice, lowestPrice, favoriteDate);
   }
 
-  public String getProductNameById(Long productId) {
-    return productRepository.findById(productId)
-        .map(Product::getProductName)
-        .orElseThrow(
-            () -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
-  }
+
   public String getProductCategory(Long productId) {
     Product product = productRepository.findById(productId)
         .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));

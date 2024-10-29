@@ -51,7 +51,7 @@ public class LikeController {
 		Long userId = getUserIdFromAuthentication(authentication);
 		List<Product> likedProducts = likeService.getLikedProductsByUser(userId);
 		List<ProductResponseDto> productDtos = likedProducts.stream()
-			.map(ProductResponseDto::new)
+			.map(ProductResponseDto::new)  // Mapping with the new constructor
 			.collect(Collectors.toList());
 		return ResponseEntity.ok(ApiResponse.ok("찜한 상품 조회 성공", productDtos));
 	}

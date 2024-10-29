@@ -3,6 +3,7 @@ package observer.backend.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,14 +13,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import observer.backend.security.OAuth2LoginSuccessHandler;
 import observer.backend.service.UserService;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 
@@ -31,12 +31,6 @@ public class SecurityConfig {
 	private UserDetailsService userDetailsService;
 
 	@Autowired
-	private ClientRegistrationRepository clientRegistrationRepository;
-
-	@Autowired
-	private OAuth2AuthorizedClientService authorizedClientService;
-
-	@Autowired
 	private UserService userService;
 
 	@Bean
@@ -45,18 +39,15 @@ public class SecurityConfig {
 			.csrf(AbstractHttpConfigurer::disable)
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 			.sessionManagement(sessionManagement ->
-				sessionManagement.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+				sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
 			)
 			.authorizeHttpRequests(authorize ->
 				authorize
-					.requestMatchers("/", "/login/**", "/oauth2/**", "/api/public/**").permitAll() // 공용 경로 허용
+					.requestMatchers("/**").permitAll() // 공용 경로 허용
 					.anyRequest().authenticated() // 그 외의 모든 요청은 인증 필요
 			)
 			.oauth2Login(oauth2 -> oauth2
 				.successHandler(oAuth2LoginSuccessHandler())
-				.failureUrl("/loginFailure")
-				.clientRegistrationRepository(clientRegistrationRepository)
-				.authorizedClientService(authorizedClientService)
 			);
 
 		return http.build();
@@ -94,5 +85,12 @@ public class SecurityConfig {
 			.userDetailsService(userDetailsService)
 			.passwordEncoder(passwordEncoder());
 		return authenticationManagerBuilder.build();
+	}
+
+	@Bean
+	public RestTemplate restTemplate() {
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.getMessageConverters().add(new FormHttpMessageConverter());
+		return restTemplate;
 	}
 }

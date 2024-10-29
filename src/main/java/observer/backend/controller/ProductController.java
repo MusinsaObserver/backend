@@ -42,12 +42,10 @@ public class ProductController {
     return ResponseEntity.ok(ApiResponse.ok("가격 변동 정보 생성 성공", (Void) null));
   }
 
-
   @GetMapping("/autoComplete")
-  public ResponseEntity<?> autoComplete(@RequestParam(name = "query") String query){
+  public ResponseEntity<?> autoComplete(@RequestParam(name = "query") String query) {
     List<String> autoCompleteList = productService.autoComplete(query);
-    System.out.println(autoCompleteList);
-    return ResponseEntity.ok(ApiResponse.ok("자동 완성 성공",autoCompleteList));
+    return ResponseEntity.ok(ApiResponse.ok("자동 완성 성공", autoCompleteList));
   }
 
   @GetMapping("/search")
