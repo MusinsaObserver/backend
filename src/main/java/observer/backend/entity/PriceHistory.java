@@ -45,4 +45,5 @@ public class PriceHistory {
     this.price = price;
     this.product = product;
   }
+
 }
