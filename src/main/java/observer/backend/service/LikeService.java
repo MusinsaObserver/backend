@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import observer.backend.entity.Like;
 import observer.backend.entity.Product;
 import observer.backend.entity.User;
+import observer.backend.exception.BusinessException;
 import observer.backend.repository.LikeRepository;
 import observer.backend.repository.ProductRepository;
 import observer.backend.repository.UserRepository;
@@ -22,6 +23,7 @@ public class LikeService {
 	private final UserRepository userRepository;
 	private final ProductRepository productRepository;
 	private final PushNotificationService pushNotificationService;  // 푸시 알림 서비스 추가
+	private static final int NOTIFICATION_INTERVAL_DAYS = 3;  // 알림 주기 상수
 
 	public LikeService(LikeRepository likeRepository, UserRepository userRepository,
 		ProductRepository productRepository, PushNotificationService pushNotificationService) {
@@ -37,7 +39,7 @@ public class LikeService {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new RuntimeException("User not found"));
 		Product product = productRepository.findById(productId)
-			.orElseThrow(() -> new RuntimeException("Product not found"));
+			.orElseThrow(() -> new BusinessException.ProductNotFoundException());
 
 		Optional<Like> existingLike = likeRepository.findByUserAndProduct(user, product);
 		if (existingLike.isPresent()) {
@@ -59,7 +61,7 @@ public class LikeService {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new RuntimeException("User not found"));
 		Product product = productRepository.findById(productId)
-			.orElseThrow(() -> new RuntimeException("Product not found"));
+			.orElseThrow(() -> new BusinessException.ProductNotFoundException());
 
 		Like like = likeRepository.findByUserAndProduct(user, product)
 			.orElseThrow(() -> new RuntimeException("Like not found"));
@@ -82,7 +84,7 @@ public class LikeService {
 	@Transactional
 	public void notifyPriceDrop(Long productId) {
 		Product product = productRepository.findById(productId)
-			.orElseThrow(() -> new RuntimeException("Product not found"));
+			.orElseThrow(() -> new BusinessException.ProductNotFoundException());
 
 		List<Like> likes = likeRepository.findAllByProduct(product);
 
@@ -91,7 +93,7 @@ public class LikeService {
 				boolean shouldSendNotification = true;
 				if (like.getLastNotificationTime() != null) {
 					LocalDateTime now = LocalDateTime.now();
-					shouldSendNotification = like.getLastNotificationTime().plusDays(3).isBefore(now);
+					shouldSendNotification = like.getLastNotificationTime().plusDays(NOTIFICATION_INTERVAL_DAYS).isBefore(now);
 				}
 
 				if (shouldSendNotification) {
