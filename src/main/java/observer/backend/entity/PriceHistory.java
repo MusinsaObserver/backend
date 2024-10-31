@@ -30,7 +30,7 @@ public class PriceHistory {
   private Long id;
 
   @Column(nullable = false, unique = false)
-  private LocalDate date; // Date 대신 LocalDate 사용
+  private LocalDate date;
 
   @Column(nullable = false, unique = false)
   private Integer price;

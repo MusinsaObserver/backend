@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface PriceHistoryRepository extends JpaRepository<PriceHistory,Long> {
+public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long> {
+
+  Optional<PriceHistory> findByDate(LocalDate date);
 
   List<PriceHistory> findByProductId(Long productId);
 }

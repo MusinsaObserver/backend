@@ -32,18 +32,18 @@ public class LikeController {
 
 	// 특정 상품을 찜하기
 	@PostMapping("/product/{productId}")
-	public ResponseEntity<ApiResponse<?>> likeProduct(@PathVariable Long productId, Authentication authentication) {
+	public ResponseEntity<ApiResponse<String>> likeProduct(@PathVariable Long productId, Authentication authentication) {
 		Long userId = getUserIdFromAuthentication(authentication);
 		likeService.likeProduct(userId, productId);
-		return ResponseEntity.ok(ApiResponse.ok("상품 찜하기 성공", null));
+		return ResponseEntity.ok(ApiResponse.ok("상품 찜하기 성공", "찜하기 완료"));
 	}
 
 	// 특정 상품 찜 해제
 	@DeleteMapping("/product/{productId}")
-	public ResponseEntity<ApiResponse<?>> unlikeProduct(@PathVariable Long productId, Authentication authentication) {
+	public ResponseEntity<ApiResponse<String>> unlikeProduct(@PathVariable Long productId, Authentication authentication) {
 		Long userId = getUserIdFromAuthentication(authentication);
 		likeService.unlikeProduct(userId, productId);
-		return ResponseEntity.ok(ApiResponse.ok("상품 찜 해제 성공", null));
+		return ResponseEntity.ok(ApiResponse.ok("상품 찜 해제 성공", "찜 해제 완료")); // 명확한 타입 지정
 	}
 
 	// 사용자가 찜한 상품 조회
@@ -52,7 +52,7 @@ public class LikeController {
 		Long userId = getUserIdFromAuthentication(authentication);
 		List<Product> likedProducts = likeService.getLikedProductsByUser(userId);
 		List<ProductResponseDto> productDtos = likedProducts.stream()
-			.map(ProductResponseDto::new)
+			.map(ProductResponseDto::new)  // Mapping with the new constructor
 			.collect(Collectors.toList());
 		return ResponseEntity.ok(ApiResponse.ok("찜한 상품 조회 성공", productDtos));
 	}
@@ -60,7 +60,7 @@ public class LikeController {
 	// Authentication에서 userId를 가져오는 유틸리티 메서드
 	private Long getUserIdFromAuthentication(Authentication authentication) {
 		OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-		String providerId = (String) oAuth2User.getAttribute("sub"); // Apple의 고유 식별자
+		String providerId = (String) oAuth2User.getAttribute("sub");
 		User user = userService.findByAppleUserId(providerId)
 			.orElseThrow(() -> new RuntimeException("User not found"));
 		return user.getUserId();
