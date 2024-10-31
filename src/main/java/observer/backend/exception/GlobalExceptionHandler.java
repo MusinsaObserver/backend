@@ -26,6 +26,11 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED); // 401 인증되지 않음
 	}
 
+	@ExceptionHandler(BusinessException.ProductNotFoundException.class)
+	public ResponseEntity<?> productNotFoundExceptionHandler(BusinessException.ProductNotFoundException ex) {
+		return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+	}
+
 	// ResourceNotFoundException 클래스 정의
 	public static class ResourceNotFoundException extends RuntimeException {
 		public ResourceNotFoundException(String message) {
