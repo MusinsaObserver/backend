@@ -24,6 +24,7 @@ public class ProductResponseDto {
   private Date favoriteDate;
   private Integer highestPrice;  // Include highest price
   private Integer lowestPrice;   // Include lowest price
+  private Integer currentPrice;  // Include current price
 
   // Existing constructor
   public ProductResponseDto(Product product) {
@@ -41,6 +42,7 @@ public class ProductResponseDto {
     this.favoriteDate = null;  // Default as null if not passed
     this.highestPrice = null;
     this.lowestPrice = null;
+    this.currentPrice = product.getPrice();
   }
 
   // New overloaded static factory method
@@ -59,7 +61,8 @@ public class ProductResponseDto {
         product.getCategory(),
         favoriteDate,
         highestPrice,
-        lowestPrice
+        lowestPrice,
+        product.getPrice()  // Set current price
     );
   }
 }

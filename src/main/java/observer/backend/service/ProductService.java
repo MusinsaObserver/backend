@@ -90,20 +90,16 @@ public class ProductService {
   public Page<ProductResponseDto> searchProducts(String query, Pageable pageable) {
     Page<Product> productPage = productRepository.searchByMultipleFields(query, pageable);
 
-    // Using lambda expression to explicitly map Product to ProductResponseDto
     return productPage.map(product -> {
-      // Fetch the price history
-      List<PriceHistory> fullPriceHistory = priceHistoryRepository.findByProductId(product.getId());
       LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
-      List<PriceHistory> threeMonthHistory = fullPriceHistory.stream()
-          .filter(history -> history.getDate().isAfter(threeMonthsAgo))
-          .toList();
+      List<PriceHistory> threeMonthHistory = priceHistoryRepository.findByProductIdAndDateBetween(product.getId(), threeMonthsAgo, LocalDate.now());
 
-      Integer highestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).max(Integer::compare).orElse(product.getPrice());
-      Integer lowestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).min(Integer::compare).orElse(product.getPrice());
+      Integer highestPrice = threeMonthHistory.stream().map(PriceHistory::getPrice).max(Integer::compare).orElse(product.getPrice());
+      Integer lowestPrice = threeMonthHistory.stream().map(PriceHistory::getPrice).min(Integer::compare).orElse(product.getPrice());
 
       Date favoriteDate = null;  // Logic to fetch favoriteDate from the Like entity can be added here
 
+      // ProductResponseDto 생성 시 현재 가격 포함
       return ProductResponseDto.fromEntity(product, threeMonthHistory, highestPrice, lowestPrice, favoriteDate);
     });
   }
@@ -112,26 +108,17 @@ public class ProductService {
     Product product = productRepository.findById(productId)
         .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
 
-    // Fetch the price history for the product
-    List<PriceHistory> fullPriceHistory = priceHistoryRepository.findByProductId(productId);
-
-    // Filter for the last 3 months
     LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
-    List<PriceHistory> threeMonthHistory = fullPriceHistory.stream()
-        .filter(history -> history.getDate().isAfter(threeMonthsAgo))
-        .toList();
+    List<PriceHistory> threeMonthHistory = priceHistoryRepository.findByProductIdAndDateBetween(productId, threeMonthsAgo, LocalDate.now());
 
-    // Calculate highest and lowest prices in the full price history
-    Integer highestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).max(Integer::compare).orElse(product.getPrice());
-    Integer lowestPrice = fullPriceHistory.stream().map(PriceHistory::getPrice).min(Integer::compare).orElse(product.getPrice());
+    Integer highestPrice = threeMonthHistory.stream().map(PriceHistory::getPrice).max(Integer::compare).orElse(product.getPrice());
+    Integer lowestPrice = threeMonthHistory.stream().map(PriceHistory::getPrice).min(Integer::compare).orElse(product.getPrice());
 
-    // Find the favorite date if necessary
     Date favoriteDate = null;  // Logic to fetch favoriteDate from the Like entity can be added here
 
-    // Return the DTO with all necessary fields
+    // ProductResponseDto 생성 시 현재 가격 포함
     return ProductResponseDto.fromEntity(product, threeMonthHistory, highestPrice, lowestPrice, favoriteDate);
   }
-
 
   public String getProductCategory(Long productId) {
     Product product = productRepository.findById(productId)
