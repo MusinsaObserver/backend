@@ -37,13 +37,13 @@ public class LikeService {
 	@Transactional
 	public void likeProduct(Long userId, Long productId) {
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new RuntimeException("User not found"));
+			.orElseThrow(() -> new BusinessException.UserNotFoundException());
 		Product product = productRepository.findById(productId)
 			.orElseThrow(() -> new BusinessException.ProductNotFoundException());
 
 		Optional<Like> existingLike = likeRepository.findByUserAndProduct(user, product);
 		if (existingLike.isPresent()) {
-			throw new RuntimeException("Product already liked by user");
+			throw new BusinessException.ProductAlreadyLikedException();
 		}
 
 		Like like = Like.builder()
@@ -59,12 +59,12 @@ public class LikeService {
 	@Transactional
 	public void unlikeProduct(Long userId, Long productId) {
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new RuntimeException("User not found"));
+			.orElseThrow(() -> new BusinessException.UserNotFoundException());
 		Product product = productRepository.findById(productId)
 			.orElseThrow(() -> new BusinessException.ProductNotFoundException());
 
 		Like like = likeRepository.findByUserAndProduct(user, product)
-			.orElseThrow(() -> new RuntimeException("Like not found"));
+			.orElseThrow(() -> new BusinessException.LikeNotFoundException());
 
 		likeRepository.delete(like);
 	}
@@ -72,7 +72,7 @@ public class LikeService {
 	// 특정 사용자가 찜한 상품 목록 조회
 	public List<Product> getLikedProductsByUser(Long userId) {
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new RuntimeException("User not found"));
+			.orElseThrow(() -> new BusinessException.UserNotFoundException());
 
 		List<Like> likes = likeRepository.findAllByUser(user);
 		return likes.stream()
