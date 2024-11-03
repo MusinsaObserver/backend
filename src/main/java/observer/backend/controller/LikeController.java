@@ -27,6 +27,7 @@ import observer.backend.service.UserService;
 public class LikeController {
 
 	private final LikeService likeService;
+  
 	private final UserService userService;
 
 	// 특정 상품을 찜하기
