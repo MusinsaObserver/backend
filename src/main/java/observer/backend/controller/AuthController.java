@@ -22,9 +22,11 @@ public class AuthController {
 		String idToken = authRequest.getIdToken();
 		AuthResponseDto response = authService.processAppleLogin(idToken);
 
-		// 세션에 사용자 ID 설정
 		request.getSession().setAttribute("userId", response.getUserId());
-		System.out.println("User logged in with ID: " + response.getUserId()); // 로그인 시 로그 추가
+		System.out.println("User logged in with ID: " + response.getUserId());
+
+		// 새로운 사용자인지 여부를 응답에 포함
+		response.setNewUser(response.isNewUser());
 
 		return ResponseEntity.ok(response);
 	}
