@@ -1,16 +1,20 @@
 package observer.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
-import java.time.LocalDate;
 import observer.backend.entity.PriceHistory;
+
+import java.time.LocalDate;
 
 @Getter
 public class PriceHistoryDto {
 	private Long id;
+
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate date;
+
 	private Integer price;
 
-	// Constructor to create a DTO from an entity
 	public PriceHistoryDto(PriceHistory priceHistory) {
 		this.id = priceHistory.getId();
 		this.date = priceHistory.getDate();
