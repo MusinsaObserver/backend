@@ -19,7 +19,7 @@ public class ProductResponseDto {
   private Integer originalPrice;
   private String productURL;
   private String imageURL;
-  private List<PriceHistoryDto> priceHistoryList;  // Using PriceHistoryDto instead of PriceHistory
+  private List<PriceHistoryDto> priceHistoryList;
   private String category;
   private Date favoriteDate;
   private Integer highestPrice;
