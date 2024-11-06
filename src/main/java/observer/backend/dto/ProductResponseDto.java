@@ -1,11 +1,12 @@
 package observer.backend.dto;
 
+import lombok.Getter;
+import lombok.AllArgsConstructor;
 import java.util.Date;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import observer.backend.entity.PriceHistory;
+import java.util.stream.Collectors;
 import observer.backend.entity.Product;
+import observer.backend.entity.PriceHistory;
 
 @Getter
 @AllArgsConstructor
@@ -19,15 +20,16 @@ public class ProductResponseDto {
   private Integer originalPrice;
   private String productURL;
   private String imageURL;
-  private List<PriceHistory> priceHistoryList;
+  private List<PriceHistoryDto> priceHistoryList;
   private String category;
   private Date favoriteDate;
-  private Integer highestPrice;  // Include highest price
-  private Integer lowestPrice;   // Include lowest price
-  private Integer currentPrice;  // Include current price
+  private Integer highestPrice;
+  private Integer lowestPrice;
+  private Integer currentPrice;
 
-  // Existing constructor
-  public ProductResponseDto(Product product) {
+  // Constructor using Product entity and additional data
+  public ProductResponseDto(Product product, List<PriceHistory> priceHistories,
+      Integer highestPrice, Integer lowestPrice, Date favoriteDate) {
     this.id = product.getId();
     this.productCode = product.getProductCode();
     this.brand = product.getBrand();
@@ -37,32 +39,25 @@ public class ProductResponseDto {
     this.originalPrice = product.getOriginalPrice();
     this.productURL = product.getProductURL();
     this.imageURL = product.getImageURL();
-    this.priceHistoryList = product.getPriceHistoryList();
     this.category = product.getCategory();
-    this.favoriteDate = null;  // Default as null if not passed
-    this.highestPrice = null;
-    this.lowestPrice = null;
+    this.favoriteDate = favoriteDate;
+    this.highestPrice = highestPrice;
+    this.lowestPrice = lowestPrice;
     this.currentPrice = product.getPrice();
+    this.priceHistoryList = priceHistories.stream()
+        .map(PriceHistoryDto::new) // Convert PriceHistory entities to PriceHistoryDto objects
+        .collect(Collectors.toList());
   }
 
-  // New overloaded static factory method
+  // Static factory method for creating ProductResponseDto from a Product entity
   public static ProductResponseDto fromEntity(Product product, List<PriceHistory> priceHistoryList,
       Integer highestPrice, Integer lowestPrice, Date favoriteDate) {
     return new ProductResponseDto(
-        product.getId(),
-        product.getBrand(),
-        product.getProductName(),
-        product.getPrice(),
-        product.getDiscountRate(),
-        product.getOriginalPrice(),
-        product.getProductURL(),
-        product.getImageURL(),
+        product,
         priceHistoryList,
-        product.getCategory(),
-        favoriteDate,
         highestPrice,
         lowestPrice,
-        product.getPrice()  // Set current price
+        favoriteDate
     );
   }
 }

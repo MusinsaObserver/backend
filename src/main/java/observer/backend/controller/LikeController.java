@@ -52,10 +52,11 @@ public class LikeController {
 		Long userId = getUserIdFromAuthentication(authentication);
 		List<Product> likedProducts = likeService.getLikedProductsByUser(userId);
 		List<ProductResponseDto> productDtos = likedProducts.stream()
-			.map(ProductResponseDto::new)  // Mapping with the new constructor
+			.map(product -> ProductResponseDto.fromEntity(product, product.getPriceHistoryList(), null, null, null))  // Assuming fromEntity can handle nulls
 			.collect(Collectors.toList());
 		return ResponseEntity.ok(ApiResponse.ok("찜한 상품 조회 성공", productDtos));
 	}
+
 
 	// Authentication에서 userId를 가져오는 유틸리티 메서드
 	private Long getUserIdFromAuthentication(Authentication authentication) {
