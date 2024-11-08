@@ -67,12 +67,12 @@ public class AuthService {
 			PublicKey publicKey = getApplePublicKey(idToken);
 
 			Claims claims = Jwts.parserBuilder()
-				.setSigningKey(publicKey) // 공개 키 사용
+				.setSigningKey(publicKey)
 				.build()
 				.parseClaimsJws(idToken)
 				.getBody();
 
-			return claims.getSubject(); // 'sub' 값 반환 (Apple 사용자 고유 식별자)
+			return claims.getSubject();
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new IllegalArgumentException("Invalid JWT Token");
@@ -81,14 +81,12 @@ public class AuthService {
 
 	private PublicKey getApplePublicKey(String idToken) {
 		try {
-			// JWT 헤더에서 kid 값을 추출 (서명 검증 없이)
 			String[] tokenParts = idToken.split("\\.");
 			String headerJson = new String(Base64.getUrlDecoder().decode(tokenParts[0]));
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode header = objectMapper.readTree(headerJson);
 			String kid = header.get("kid").asText();
 
-			// Apple 공개 키를 가져오는 URL
 			URL url = new URL("https://appleid.apple.com/auth/keys");
 			InputStream inputStream = url.openStream();
 
@@ -136,7 +134,7 @@ public class AuthService {
 				userRepository.delete(user);
 				return true;
 			} else {
-				return false; // 사용자를 찾지 못함
+				return false;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

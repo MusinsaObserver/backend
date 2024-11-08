@@ -26,7 +26,6 @@ public class ProductResponseDto {
   private Integer lowestPrice;
   private Integer currentPrice;
 
-  // Constructor using Product entity and additional data
   public ProductResponseDto(Product product, List<PriceHistory> priceHistories,
       Integer highestPrice, Integer lowestPrice, Date favoriteDate) {
     this.id = product.getId();
@@ -43,11 +42,10 @@ public class ProductResponseDto {
     this.lowestPrice = lowestPrice;
     this.currentPrice = product.getPrice();
     this.priceHistoryList = priceHistories.stream()
-        .map(PriceHistoryDto::new) // Convert PriceHistory entities to PriceHistoryDto objects
+        .map(PriceHistoryDto::new)
         .collect(Collectors.toList());
   }
 
-  // Static factory method for creating ProductResponseDto from a Product entity
   public static ProductResponseDto fromEntity(Product product, List<PriceHistory> priceHistoryList,
       Integer highestPrice, Integer lowestPrice, Date favoriteDate) {
     return new ProductResponseDto(

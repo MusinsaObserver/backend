@@ -22,18 +22,17 @@ public class LikeService {
 	private final LikeRepository likeRepository;
 	private final UserRepository userRepository;
 	private final ProductRepository productRepository;
-	private final PushNotificationService pushNotificationService;  // 푸시 알림 서비스 추가
-	private static final int NOTIFICATION_INTERVAL_DAYS = 3;  // 알림 주기 상수
+	private final PushNotificationService pushNotificationService;
+	private static final int NOTIFICATION_INTERVAL_DAYS = 3;
 
 	public LikeService(LikeRepository likeRepository, UserRepository userRepository,
 		ProductRepository productRepository, PushNotificationService pushNotificationService) {
 		this.likeRepository = likeRepository;
 		this.userRepository = userRepository;
 		this.productRepository = productRepository;
-		this.pushNotificationService = pushNotificationService;  // 푸시 알림 서비스 초기화
+		this.pushNotificationService = pushNotificationService;
 	}
 
-	// 특정 사용자가 특정 상품을 찜하기
 	@Transactional
 	public void likeProduct(Long userId, Long productId) {
 		User user = userRepository.findById(userId)
@@ -55,7 +54,6 @@ public class LikeService {
 		likeRepository.save(like);
 	}
 
-	// 특정 사용자가 특정 상품의 찜을 해제
 	@Transactional
 	public void unlikeProduct(Long userId, Long productId) {
 		User user = userRepository.findById(userId)
@@ -69,7 +67,6 @@ public class LikeService {
 		likeRepository.delete(like);
 	}
 
-	// 특정 사용자가 찜한 상품 목록 조회
 	public List<Product> getLikedProductsByUser(Long userId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new BusinessException.UserNotFoundException());
@@ -80,7 +77,6 @@ public class LikeService {
 			.collect(Collectors.toList());
 	}
 
-	// 찜한 상품의 가격 하락 시 사용자에게 푸시 알림
 	@Transactional
 	public void notifyPriceDrop(Long productId) {
 		Product product = productRepository.findById(productId)
@@ -105,11 +101,20 @@ public class LikeService {
 		}
 	}
 
-	// 푸시 알림 전송 로직 추가
 	private void sendPriceDropNotification(User user, Product product, int initialPrice) {
 		String title = "찜한 상품의 가격이 하락했습니다!";
 		String body = String.format("상품 '%s'의 가격이 하락했습니다. 현재 가격: %d원", product.getProductName(), product.getPrice());
 
-		pushNotificationService.sendNotification(user.getDeviceToken(), title, body);  // 푸시 알림 서비스 호출
+		pushNotificationService.sendNotification(user.getDeviceToken(), title, body);
+	}
+	@Transactional(readOnly = true)
+	public boolean isLikedByUser(Long userId, Long productId) {
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new BusinessException.UserNotFoundException());
+		Product product = productRepository.findById(productId)
+			.orElseThrow(() -> new BusinessException.ProductNotFoundException());
+
+		Optional<Like> like = likeRepository.findByUserAndProduct(user, product);
+		return like.isPresent();
 	}
 }
