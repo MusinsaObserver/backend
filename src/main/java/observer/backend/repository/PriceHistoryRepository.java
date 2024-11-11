@@ -12,7 +12,5 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long
 
   Optional<PriceHistory> findByDate(LocalDate date);
 
-  List<PriceHistory> findByProductId(Long productId);
-
   List<PriceHistory> findByProductIdAndDateBetween(Long productId, LocalDate startDate, LocalDate endDate);
 }

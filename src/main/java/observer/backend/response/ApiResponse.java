@@ -19,7 +19,6 @@ public class ApiResponse<T> {
 		this.pagination = pagination;
 	}
 
-	// Success method for Page data
 	public static <T> ApiResponse<List<T>> ok(String message, Page<T> pageData) {
 		PaginationInfo paginationInfo = new PaginationInfo(
 			pageData.getNumber(),
@@ -31,19 +30,17 @@ public class ApiResponse<T> {
 		return new ApiResponse<>(message, pageData.getContent(), paginationInfo);
 	}
 
-	// Success method for List data
 	public static <T> ApiResponse<List<T>> ok(String message, List<T> data) {
 		return new ApiResponse<>(message, data, null);
 	}
 
-	// Success method for single object data
 	public static <T> ApiResponse<T> ok(String message, T data) {
 		return new ApiResponse<>(message, data, null);
 	}
 
-	// Failure method
-	public static <T> ApiResponse<T> fail(String message, T errorResponse) {
-		return new ApiResponse<>(message, errorResponse, null);
+
+	public static <T> ApiResponse<T> fail(String message, ErrorResponse errorResponse) {
+		return new ApiResponse<>(message, (T) errorResponse, null);
 	}
 
 	@Getter
