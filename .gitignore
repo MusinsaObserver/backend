@@ -38,7 +38,6 @@ out/
 .DS_Store
 gradle/.DS_Store
 src/.DS_Store
-*.yml
 
 venv/
 cookies.txt
