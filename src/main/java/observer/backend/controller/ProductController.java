@@ -43,6 +43,12 @@ public class ProductController {
     return ResponseEntity.ok(ApiResponse.ok("자동 완성 성공", autoCompleteList));
   }
 
+  @PostMapping("/crawling")
+  public ResponseEntity<?> crawlProduct() {
+    productService.crawlProduct();
+    return ResponseEntity.ok(ApiResponse.ok("크롤링 및 DB 저장 성공", null));
+  }
+  
   @GetMapping("/search")
   public ResponseEntity<ApiResponse<List<ProductResponseDto>>> searchProducts(
       @RequestParam(name = "query") String query,
@@ -69,7 +75,7 @@ public class ProductController {
     ProductResponseDto productResponseDto = productService.searchProduct(productId);
     return ResponseEntity.ok(ApiResponse.ok("제품 세부사항 검색 성공", productResponseDto));
   }
-
+  
   @GetMapping("/{productId}/category")
   public ResponseEntity<ApiResponse<String>> getProductCategory(@PathVariable Long productId) {
     String category = productService.getProductCategory(productId);

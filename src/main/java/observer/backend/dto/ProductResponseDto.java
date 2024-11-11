@@ -12,10 +12,11 @@ import observer.backend.entity.PriceHistory;
 @AllArgsConstructor
 public class ProductResponseDto {
   private Long id;
+  private String productCode;
   private String brand;
   private String productName;
   private Integer price;
-  private String discountRate;
+  private Integer discountRate;
   private Integer originalPrice;
   private String productURL;
   private String imageURL;
@@ -29,6 +30,7 @@ public class ProductResponseDto {
   public ProductResponseDto(Product product, List<PriceHistory> priceHistories,
       Integer highestPrice, Integer lowestPrice, Date favoriteDate) {
     this.id = product.getId();
+    this.productCode = product.getProductCode();
     this.brand = product.getBrand();
     this.productName = product.getProductName();
     this.price = product.getPrice();
