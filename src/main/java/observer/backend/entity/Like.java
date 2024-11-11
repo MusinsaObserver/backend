@@ -33,4 +33,7 @@ public class Like {
 	@Column
 	private LocalDateTime lastNotificationTime;  // 마지막 알림 발송 시간
 
+	@Column
+	private Boolean isNotificationSent;
+
 }

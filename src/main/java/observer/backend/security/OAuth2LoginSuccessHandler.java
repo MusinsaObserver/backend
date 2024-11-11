@@ -1,16 +1,19 @@
 package observer.backend.security;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import observer.backend.entity.User;
 import observer.backend.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
 @Component
+@Slf4j
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
 	private final UserService userService;
@@ -21,20 +24,38 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-		// 인증된 사용자 정보 가져오기
-		String email = authentication.getName();
-		User user = userService.findByEmail(email).orElseGet(() -> {
+		OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+		String appleUserId = (String) oAuth2User.getAttribute("sub");
+
+		log.info("Attempting to find or create user with Apple ID: {}", appleUserId);
+
+		User user = userService.findByAppleUserId(appleUserId).orElseGet(() -> {
+			log.info("User with Apple ID {} not found, creating new user.", appleUserId);
 			User newUser = User.builder()
-				.email(email)
+				.provider("apple")
+				.providerId(appleUserId)
 				.build();
 			return userService.save(newUser);
 		});
 
-		// 세션에 사용자 정보 저장
-		request.getSession().setAttribute("user", user);
+		request.getSession().setAttribute("userId", user.getUserId());
+		request.getSession().setMaxInactiveInterval(86400);
 
-		// 리디렉션 처리
-		String redirectUrl = "http://localhost:8080/my_page_1";
-		getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+		log.info("User logged in with ID: {}", user.getUserId());
+		log.info("Session ID: {}", request.getSession().getId());
+		log.info("Session Max Inactive Interval: {}", request.getSession().getMaxInactiveInterval());
+
+		if (request.getSession(false) == null) {
+			log.warn("No session created for user ID {}. Session might be stateless or session management issues could exist.", user.getUserId());
+		} else {
+			log.info("Session successfully created for user ID {}.", user.getUserId());
+		}
+
+		Object sessionUserId = request.getSession().getAttribute("userId");
+		if (sessionUserId == null) {
+			log.error("Failed to store user ID in session. Session might not be maintained correctly.");
+		} else {
+			log.info("User ID {} successfully stored in session.", sessionUserId);
+		}
 	}
 }
