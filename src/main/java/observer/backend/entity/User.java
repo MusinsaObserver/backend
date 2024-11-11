@@ -8,18 +8,18 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "user")
+@Table(name = "[user]")
 public class User {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long userId;
+  
+	@Column(name = "provider", nullable = false)
+	private String provider;
 
-	@Column(name = "provider")
-	private String provider; // OAuth2 제공자 이름
-
-	@Column(name = "provider_id")
-	private String providerId; // OAuth2 사용자 ID
+	@Column(name = "provider_id", unique = true, nullable = false)
+	private String providerId; // Apple에서 제공하는 사용자 고유 ID (sub)
 
 	@Column(name = "device_token")
 	private String deviceToken;

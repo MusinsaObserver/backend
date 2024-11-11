@@ -6,13 +6,11 @@ import lombok.Getter;
 public class UserDto {
 
 	private Long id;
-	private String email;
 
 	public UserDto() {
 	}
 
-	public UserDto(Long id, String email) {
+	public UserDto(Long id) {
 		this.id = id;
-		this.email = email;
 	}
 }

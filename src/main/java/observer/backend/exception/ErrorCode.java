@@ -5,6 +5,8 @@ import lombok.Getter;
 @Getter
 public enum ErrorCode {
 
+  INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
+
   // user
   FAILED_ADMIN_PASSWORD_EXCEPTION("관리자 암호 인증 실패해서 가입이 불가능합니다."),
   ALREADY_EXIST_USER_EMAIL_EXCEPTION("이미 존재하는 이메일 입니다."),
@@ -21,14 +23,13 @@ public enum ErrorCode {
   LOGIN_REQUIRED_EXCEPTION("리프레시 토큰 문제 있으니 다시 로그인 해주세요."),
 
   // product
-  NOT_FOUND_PRODUCT("해당 상품을 찾을 수 없습니다.");
-
-
+  NOT_FOUND_PRODUCT("해당 상품을 찾을 수 없습니다."),
+  ALREADY_LIKED_PRODUCT("이미 좋아요한 상품입니다."),
+  NOT_FOUND_LIKE("좋아요 정보를 찾을 수 없습니다.");
 
   private final String message;
 
   ErrorCode(String message) {
     this.message = message;
   }
-
 }

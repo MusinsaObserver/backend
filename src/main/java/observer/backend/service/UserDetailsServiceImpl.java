@@ -1,6 +1,6 @@
 package observer.backend.service;
 
-import observer.backend.entity.User; // 올바른 User 엔티티 import
+import observer.backend.entity.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,6 +18,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 	@Override
 	public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
+    
 		// userId를 사용하여 사용자 조회
 		Long userId;
 		try {

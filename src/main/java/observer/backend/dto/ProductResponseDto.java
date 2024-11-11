@@ -1,36 +1,61 @@
 package observer.backend.dto;
 
-import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import observer.backend.entity.PriceHistory;
+import lombok.AllArgsConstructor;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 import observer.backend.entity.Product;
-
+import observer.backend.entity.PriceHistory;
 
 @Getter
 @AllArgsConstructor
 public class ProductResponseDto {
   private Long id;
+  private String productCode;
   private String brand;
   private String productName;
   private Integer price;
-  private String discountRate;
+  private Integer discountRate;
   private Integer originalPrice;
   private String productURL;
   private String imageURL;
-  private List<PriceHistory> priceHistoryList;
+  private List<PriceHistoryDto> priceHistoryList;
   private String category;
+  private Date favoriteDate;
+  private Integer highestPrice;
+  private Integer lowestPrice;
+  private Integer currentPrice;
 
-  public ProductResponseDto(Product product){
+  public ProductResponseDto(Product product, List<PriceHistory> priceHistories,
+      Integer highestPrice, Integer lowestPrice, Date favoriteDate) {
     this.id = product.getId();
+    this.productCode = product.getProductCode();
     this.brand = product.getBrand();
     this.productName = product.getProductName();
     this.price = product.getPrice();
     this.discountRate = product.getDiscountRate();
     this.originalPrice = product.getOriginalPrice();
     this.productURL = product.getProductURL();
-    this.priceHistoryList = product.getPriceHistoryList();
     this.imageURL = product.getImageURL();
     this.category = product.getCategory();
+    this.favoriteDate = favoriteDate;
+    this.highestPrice = highestPrice;
+    this.lowestPrice = lowestPrice;
+    this.currentPrice = product.getPrice();
+    this.priceHistoryList = priceHistories.stream()
+        .map(PriceHistoryDto::new)
+        .collect(Collectors.toList());
+  }
+
+  public static ProductResponseDto fromEntity(Product product, List<PriceHistory> priceHistoryList,
+      Integer highestPrice, Integer lowestPrice, Date favoriteDate) {
+    return new ProductResponseDto(
+        product,
+        priceHistoryList,
+        highestPrice,
+        lowestPrice,
+        favoriteDate
+    );
   }
 }
