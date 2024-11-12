@@ -1,9 +1,9 @@
 package observer.backend.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import observer.backend.dto.ProductResponseDto;
@@ -116,11 +116,5 @@ public class ProductService {
     Date favoriteDate = null;
 
     return ProductResponseDto.fromEntity(product, threeMonthHistory, highestPrice, lowestPrice, favoriteDate);
-  }
-
-  public String getProductCategory(Long productId) {
-    Product product = productRepository.findById(productId)
-        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, ErrorCode.NOT_FOUND_PRODUCT));
-    return product.getCategory();
   }
 }
