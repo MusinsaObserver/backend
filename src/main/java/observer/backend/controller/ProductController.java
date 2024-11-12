@@ -37,16 +37,10 @@ public class ProductController {
     return ResponseEntity.ok(ApiResponse.ok("가격 변동 정보 생성 성공", (Void) null));
   }
 
-  @GetMapping("/autoComplete")
-  public ResponseEntity<ApiResponse<List<String>>> autoComplete(@RequestParam(name = "query") String query) {
-    List<String> autoCompleteList = productService.autoComplete(query);
-    return ResponseEntity.ok(ApiResponse.ok("자동 완성 성공", autoCompleteList));
-  }
-
   @PostMapping("/crawling")
-  public ResponseEntity<?> crawlProduct() {
+  public ResponseEntity<ApiResponse<Void>> crawlProduct() {
     productService.crawlProduct();
-    return ResponseEntity.ok(ApiResponse.ok("크롤링 및 DB 저장 성공", null));
+    return ResponseEntity.ok(ApiResponse.ok("크롤링 및 DB 저장 성공", (Void) null));
   }
   
   @GetMapping("/search")
@@ -74,11 +68,5 @@ public class ProductController {
     log.info("Searching product details for productId: {}", productId);
     ProductResponseDto productResponseDto = productService.searchProduct(productId);
     return ResponseEntity.ok(ApiResponse.ok("제품 세부사항 검색 성공", productResponseDto));
-  }
-  
-  @GetMapping("/{productId}/category")
-  public ResponseEntity<ApiResponse<String>> getProductCategory(@PathVariable Long productId) {
-    String category = productService.getProductCategory(productId);
-    return ResponseEntity.ok(ApiResponse.ok("제품 카테고리 조회 성공", category));
   }
 }

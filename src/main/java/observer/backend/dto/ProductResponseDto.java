@@ -21,7 +21,6 @@ public class ProductResponseDto {
   private String productURL;
   private String imageURL;
   private List<PriceHistoryDto> priceHistoryList;
-  private String category;
   private Date favoriteDate;
   private Integer highestPrice;
   private Integer lowestPrice;
@@ -38,7 +37,6 @@ public class ProductResponseDto {
     this.originalPrice = product.getOriginalPrice();
     this.productURL = product.getProductURL();
     this.imageURL = product.getImageURL();
-    this.category = product.getCategory();
     this.favoriteDate = favoriteDate;
     this.highestPrice = highestPrice;
     this.lowestPrice = lowestPrice;
