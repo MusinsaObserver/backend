@@ -34,7 +34,7 @@ jobs:
       if: success()
       run: |
         # Set up SSH
-        ssh-agent bash -c 'ssh-add <(echo "${{ secrets.SSH_KEY }}")'
+        echo "${{ secrets.SSH_KEY }}" | ssh-add - 
 
         # Copy files to the server
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/musinsa_observer"
@@ -46,3 +46,4 @@ jobs:
           cd ~/musinsa_observer/build/libs
           nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
         EOF
+
