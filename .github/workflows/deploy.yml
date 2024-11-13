@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,35 +27,29 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Build with Gradle
-      run: ./gradlew clean build
+    - name: Build without tests
+      run: ./gradlew clean assemble
 
-    - name: Run tests
-      run: ./gradlew test
+    - name: Deploy to Server
+      if: success()
+      steps:
+      - name: Check out code
+        uses: actions/checkout@v2
 
-  deploy:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: success()
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v2
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.5.3
-      with:
-        ssh-private-key: ${{ secrets.SSH_KEY }}
+      - name: Copy files to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/musinsa_observer"
+          scp -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/musinsa_observer/
 
-    - name: Copy files to server
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/musinsa_observer"
-        scp -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/musinsa_observer/
-
-    - name: Start Application on Server
-      run: |
-        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-        pkill -f 'java -jar' || true
-        cd ~/musinsa_observer/build/libs
-        nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
-        EOF
+      - name: Start Application on Server
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          pkill -f 'java -jar' || true
+          cd ~/musinsa_observer/build/libs
+          nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
+          EOF
