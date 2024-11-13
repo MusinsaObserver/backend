@@ -32,24 +32,17 @@ jobs:
 
     - name: Deploy to Server
       if: success()
-      steps:
-      - name: Check out code
-        uses: actions/checkout@v2
+      run: |
+        # Set up SSH
+        ssh-agent bash -c 'ssh-add <(echo "${{ secrets.SSH_KEY }}")'
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
+        # Copy files to the server
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/musinsa_observer"
+        scp -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/musinsa_observer/
 
-      - name: Copy files to server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/musinsa_observer"
-          scp -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/musinsa_observer/
-
-      - name: Start Application on Server
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+        # Start the application on the server
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           pkill -f 'java -jar' || true
           cd ~/musinsa_observer/build/libs
           nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
-          EOF
+        EOF
