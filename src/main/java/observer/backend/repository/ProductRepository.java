@@ -11,11 +11,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-  // 자동완성 기능
-  List<Product> findTop10ByProductNameContaining(String query);
-
   // ID로 제품 찾기
   Optional<Product> findById(Long productId);
+
+  Optional<Product> findByProductCode(String productCode);
 
   // URL로 제품 찾기
   Optional<Product> findByProductURL(String productURL);
