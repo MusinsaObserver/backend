@@ -1,11 +1,14 @@
 name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -38,21 +41,18 @@ jobs:
         eval $(ssh-agent -s)
         echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
         
-        # Create known_hosts file
+        # Configure SSH known hosts
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
-        
-        # Add host key checking
         ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
         
-        # Create directory and copy files
-        ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/musinsa_observer"
+        # Copy files to the server
+        ssh $SSH_USER@$SSH_HOST "mkdir -p ~/musinsa_observer"
         scp -r ./* $SSH_USER@$SSH_HOST:~/musinsa_observer/
         
-        # Stop existing application and start new one
-        ssh $SSH_USER@$SSH_HOST << 'EOF'
+        # Restart the application
+        ssh $SSH_USER@$SSH_HOST <<EOF
           pkill -f 'java -jar' || true
           cd ~/musinsa_observer/build/libs
           nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
-          echo "Application started"
 EOF
