@@ -52,4 +52,4 @@ jobs:
           pkill -f 'java -jar' || true
           cd ~/musinsa_observer/build/libs
           nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
-EOF
+        EOF
