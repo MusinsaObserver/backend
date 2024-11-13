@@ -26,9 +26,12 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
-
+          
     - name: Build without tests
       run: ./gradlew clean assemble
+
+    - name: Check JAR file existence
+      run: ls -l build/libs
 
     - name: Deploy to Server
       if: success()
@@ -46,8 +49,8 @@ jobs:
         # Disable strict host key checking and create remote directory
         ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/musinsa_observer"
     
-        # Copy files to the server
-        scp -r ./* $SSH_USER@$SSH_HOST:~/musinsa_observer/
+        # Copy built JAR file to the server
+        scp -r build/libs/team4-0.0.1-SNAPSHOT.jar $SSH_USER@$SSH_HOST:~/musinsa_observer/build/libs/
     
         # Start the application on the server
         ssh $SSH_USER@$SSH_HOST << 'EOF'
