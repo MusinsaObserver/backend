@@ -39,6 +39,7 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
         SSH_USER: ${{ secrets.SSH_USER }}
         SSH_HOST: ${{ secrets.SSH_HOST }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
         # Start ssh-agent and add the private key
         eval "$(ssh-agent -s)"
