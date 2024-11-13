@@ -39,17 +39,23 @@ jobs:
       run: |
         # Start ssh-agent and add the private key
         eval "$(ssh-agent -s)"
-        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' > private_key.pem
+        chmod 600 private_key.pem
+        ssh-add private_key.pem
+    
         # Disable strict host key checking and create remote directory
         ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/musinsa_observer"
-
+    
         # Copy files to the server
         scp -r ./* $SSH_USER@$SSH_HOST:~/musinsa_observer/
-
+    
         # Start the application on the server
         ssh $SSH_USER@$SSH_HOST << 'EOF'
           pkill -f 'java -jar' || true
           cd ~/musinsa_observer/build/libs
           nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
         EOF
+
+    - name: Clean up
+      if: success()
+      run: rm -f private_key.pem
