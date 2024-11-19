@@ -57,9 +57,7 @@ jobs:
             rm -f ~/musinsa_observer/build/libs/team4-0.0.1-SNAPSHOT.jar
 
             # 새로운 JAR 업로드
-            cat > ~/musinsa_observer/build/libs/team4-0.0.1-SNAPSHOT.jar << 'EOF'
-$(cat build/libs/team4-0.0.1-SNAPSHOT.jar | base64 -w0)
-EOF
+            cat > ~/musinsa_observer/build/libs/team4-0.0.1-SNAPSHOT.jar << 'EOF'$(cat build/libs/team4-0.0.1-SNAPSHOT.jar | base64 -w0)EOF
             base64 -d ~/musinsa_observer/build/libs/team4-0.0.1-SNAPSHOT.jar > ~/musinsa_observer/build/libs/team4-0.0.1-SNAPSHOT.jar
 
             # JAR 실행
