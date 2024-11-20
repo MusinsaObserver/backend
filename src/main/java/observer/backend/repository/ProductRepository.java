@@ -20,6 +20,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
   Optional<Product> findByProductURL(String productURL);
 
   // 여러 필드(product_name, category, brand)에서 검색
-  @Query("SELECT p FROM Product p WHERE p.productName LIKE %:query% OR p.category LIKE %:query% OR p.brand LIKE %:query%")
+  @Query("SELECT p FROM Product p WHERE p.productName LIKE %:query% OR p.brand LIKE %:query%")
   Page<Product> searchByMultipleFields(@Param("query") String query, Pageable pageable);
 }
