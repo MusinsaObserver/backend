@@ -19,14 +19,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import observer.backend.security.OAuth2LoginSuccessHandler;
 import observer.backend.service.UserService;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -49,9 +49,9 @@ public class SecurityConfig {
 				.expiredUrl("/api/auth/session-expired")
 			)
 			.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers("/api/auth/**", "/api/product/**").permitAll() // 공용 경로
-				.requestMatchers("/api/likes/**").authenticated()               // 인증 필요 경로
-				.anyRequest().authenticated()                                   // 기타 모든 요청은 인증 필요
+				.requestMatchers("/api/auth/**", "/api/product/**").permitAll()
+				.requestMatchers("/api/likes/**").authenticated()
+				.anyRequest().authenticated()
 			)
 			.oauth2Login(oauth2 -> oauth2
 				.successHandler(oAuth2LoginSuccessHandler())
@@ -61,6 +61,7 @@ public class SecurityConfig {
 				.logoutUrl("/api/auth/logout")
 				.logoutSuccessHandler((request, response, authentication) -> {
 					response.setStatus(HttpStatus.OK.value());
+					response.getWriter().write("{\"message\": \"Logout successful\"}");
 				})
 				.invalidateHttpSession(true)
 				.deleteCookies("JSESSIONID")
@@ -81,11 +82,10 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowCredentials(true);
-		configuration.addAllowedOriginPattern("*");
-		configuration.addAllowedHeader("*");
-		configuration.addAllowedMethod("*");
-		configuration.setExposedHeaders(Collections.singletonList("Authorization"));
-		configuration.addAllowedHeader("Set-Cookie");
+		configuration.addAllowedOriginPattern("*"); // 모든 도메인 허용
+		configuration.setAllowedHeaders(List.of("*"));
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
