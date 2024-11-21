@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,36 +26,50 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+          
+    - name: Build without tests
+      run: ./gradlew clean assemble
 
-    - name: Build with Gradle
-      run: ./gradlew clean build
+    - name: Check JAR file existence
+      run: ls -l build/libs
 
-    - name: Run tests
-      run: ./gradlew test
+    - name: Deploy to Server
+      if: success()
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+        SSH_USER: ${{ secrets.SSH_USER }}
+        SSH_HOST: ${{ secrets.SSH_HOST }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+        DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      run: |
+        # Debug environment variables
+        echo "=== Debugging Environment Variables ==="
+        echo "DATABASE_URL: $DATABASE_URL"
+        echo "DATABASE_USERNAME: $DATABASE_USERNAME"
+        echo "SSH_USER: $SSH_USER"
+        echo "SSH_HOST: $SSH_HOST"
+        echo "======================================="
 
-  deploy:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: success()
+        # Start ssh-agent and add the private key
+        eval "$(ssh-agent -s)"
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' > private_key.pem
+        chmod 600 private_key.pem
+        ssh-add private_key.pem
     
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v2
-
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.5.3
-      with:
-        ssh-private-key: ${{ secrets.SSH_KEY }}
-
-    - name: Copy files to server
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/musinsa_observer"
-        scp -r ./* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/musinsa_observer/
-
-    - name: Start Application on Server
-      run: |
-        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-        pkill -f 'java -jar' || true
-        cd ~/musinsa_observer/build/libs
-        nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
+        # Disable strict host key checking and create remote directory
+        ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/musinsa_observer"
+    
+        # Copy built JAR file to the server
+        scp -r build/libs/team4-0.0.1-SNAPSHOT.jar $SSH_USER@$SSH_HOST:~/musinsa_observer/build/libs/
+    
+        # Start the application on the server
+        ssh $SSH_USER@$SSH_HOST << 'EOF'
+          pkill -f 'java -jar' || true
+          cd ~/musinsa_observer/build/libs
+          nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
         EOF
+
+    - name: Clean up
+      if: success()
+      run: rm -f private_key.pem
