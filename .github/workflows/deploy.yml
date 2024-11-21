@@ -57,8 +57,13 @@ jobs:
         chmod 600 private_key.pem
         ssh-add private_key.pem
     
-        # Disable strict host key checking and create remote directory
-        ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p ~/musinsa_observer"
+        # Disable strict host key checking
+        ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+          echo "Stopping existing application if running..."
+          pkill -f 'java -jar' || true
+          echo "Cleaning up old files..."
+          rm -rf ~/musinsa_observer/build/libs/*
+        EOF
     
         # Copy built JAR file to the server
         scp -r build/libs/team4-0.0.1-SNAPSHOT.jar $SSH_USER@$SSH_HOST:~/musinsa_observer/build/libs/
