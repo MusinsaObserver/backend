@@ -49,9 +49,9 @@ public class SecurityConfig {
 				.expiredUrl("/api/auth/session-expired")
 			)
 			.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers("/api/auth/**", "/api/product/**").permitAll()
-				.requestMatchers("/api/likes/**").authenticated()
-				.anyRequest().authenticated()
+				.requestMatchers("/", "/api/auth/**", "/api/product/**").permitAll() // 공용 경로
+				.requestMatchers("/api/likes/**").authenticated()                   // 인증 필요 경로
+				.anyRequest().authenticated()                                       // 기타 모든 요청은 인증 필요
 			)
 			.oauth2Login(oauth2 -> oauth2
 				.successHandler(oAuth2LoginSuccessHandler())
