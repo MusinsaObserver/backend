@@ -88,9 +88,4 @@ public class AuthController {
 	public String publicEndpoint() {
 		return "Public endpoint";
 	}
-
-	@GetMapping("/")
-	public String home() {
-		return "윤서야 안녕!";
-	}
 }
