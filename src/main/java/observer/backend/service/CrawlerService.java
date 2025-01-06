@@ -4,6 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import jakarta.annotation.PostConstruct;
+import lombok.AllArgsConstructor;
+import observer.backend.entity.Category;
+import observer.backend.entity.Product;
+import observer.backend.repository.CategoryRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -18,7 +24,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 @Service
+@AllArgsConstructor
 public class CrawlerService {
+    private final ProductService productService;
+    private final CategoryRepository categoryRepository;
 
     // 카테고리별 URL 딕셔너리 (페이지 번호는 %d로 대체)
     private static final Map<String, String> categoryUrls = Map.ofEntries(
@@ -39,6 +48,16 @@ public class CrawlerService {
             Map.entry("어스", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=108&caller=CATEGORY&page=%d&size=30")
     );
 
+    @PostConstruct
+    public void initCategories() {
+        // 카테고리 기본 데이터 설정
+        if (categoryRepository.count() == 0) { // 데이터가 없는 경우만 초기화
+            for (String category : categoryUrls.keySet()) {
+                categoryRepository.save(new Category(category));
+            }
+        }
+        System.out.println("카테고리 초기화 완료!");
+    }
 
     // 개별 카테고리에 대한 크롤링 작업 수행
     public List<String[]> ajaxCrawling(String category, String baseUrl) {
@@ -120,7 +139,19 @@ public class CrawlerService {
             executorService.shutdown(); // 스레드 풀 종료
         }
 
+        System.out.println(allResults);
 
         return allResults; // 모든 카테고리의 결과를 반환
     }
+
+    // 매일 아침 6시에 크롤링 실행
+    @Scheduled(cron = "0 0 6 * * ?")
+    public void scheduleCrawling() {
+        System.out.println("아침 6시에 크롤링 작업 시작...");
+        productService.createProduct(parallelCrawling());
+    }
+//    @Scheduled(cron = "0 */1 * * * ?")
+//    public void testScheduler() {
+//        System.out.println("스케줄러 실행 테스트...");
+//    }
 }
