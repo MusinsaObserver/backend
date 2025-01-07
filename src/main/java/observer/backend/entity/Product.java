@@ -5,10 +5,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,6 +59,15 @@ public class Product {
 
   @OneToMany(mappedBy = "product")
   List<PriceHistory> priceHistoryList = new ArrayList<>();
+
+  @ManyToMany
+  @JoinTable(
+      name = "product_category",
+      joinColumns = @JoinColumn(name = "product_id"),
+      inverseJoinColumns = @JoinColumn(name = "category_id")
+  )
+  private Set<Category> categories = new HashSet<>();
+
 
   public Product(String productCode, String brand, String productName, Integer price, Integer discountRate, Integer originalPrice, String productURL, String imageURL) {
     this.productCode = productCode;

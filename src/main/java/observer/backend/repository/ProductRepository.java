@@ -22,4 +22,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
   // 여러 필드(product_name, category, brand)에서 검색
   @Query("SELECT p FROM Product p WHERE p.productName LIKE %:query% OR p.brand LIKE %:query%")
   Page<Product> searchByMultipleFields(@Param("query") String query, Pageable pageable);
+
+  Optional<Product> findByProductName(String productName);
 }

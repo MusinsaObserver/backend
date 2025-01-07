@@ -24,25 +24,6 @@ public class ProductController {
 
   private final ProductService productService;
 
-  @PostMapping("/create")
-  public ResponseEntity<ApiResponse<Void>> createProduct(@RequestBody List<Product> productList) {
-    productService.createProduct(productList);
-    return ResponseEntity.ok(ApiResponse.ok("제품 정보 생성 성공", (Void) null));
-  }
-
-  @PostMapping("/createPriceHistory/{productId}")
-  public ResponseEntity<ApiResponse<Void>> createPriceHistory(@RequestBody PriceHistory priceHistory,
-      @PathVariable(name = "productId") Long productId) {
-    productService.createPriceHistory(priceHistory, productId);
-    return ResponseEntity.ok(ApiResponse.ok("가격 변동 정보 생성 성공", (Void) null));
-  }
-
-  @PostMapping("/crawling")
-  public ResponseEntity<ApiResponse<Void>> crawlProduct() {
-    productService.crawlProduct();
-    return ResponseEntity.ok(ApiResponse.ok("크롤링 및 DB 저장 성공", (Void) null));
-  }
-  
   @GetMapping("/search")
   public ResponseEntity<ApiResponse<List<ProductResponseDto>>> searchProducts(
       @RequestParam(name = "query") String query,
