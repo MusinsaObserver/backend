@@ -22,13 +22,16 @@ jobs:
     - name: Cache Gradle packages
       uses: actions/cache@v2
       with:
-        path: ~/.gradle/caches
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
           
     - name: Build without tests
       run: ./gradlew clean assemble
+      continue-on-error: false
 
     - name: Check JAR file existence
       run: ls -l build/libs
