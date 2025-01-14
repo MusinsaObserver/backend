@@ -60,10 +60,20 @@ jobs:
         chmod 600 private_key.pem
         ssh-add private_key.pem
     
-        # Disable strict host key checking
+        # Prepare server (install Java and create directories)
         ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
-          echo "Stopping existing application if running..."
-          pkill -f 'java -jar' || true
+          echo "Ensuring Java is installed..."
+          if ! command -v java &> /dev/null
+          then
+              echo "Java not found. Installing Java..."
+              sudo amazon-linux-extras enable corretto8
+              sudo yum install -y java-1.8.0-amazon-corretto
+          else
+              echo "Java is already installed."
+          fi
+
+          echo "Ensuring target directory exists..."
+          mkdir -p ~/musinsa_observer/build/libs
           echo "Cleaning up old files..."
           rm -rf ~/musinsa_observer/build/libs/*
         EOF
@@ -73,6 +83,7 @@ jobs:
     
         # Start the application on the server
         ssh $SSH_USER@$SSH_HOST << 'EOF'
+          echo "Starting application..."
           pkill -f 'java -jar' || true
           cd ~/musinsa_observer/build/libs
           nohup java -jar -Dspring.profiles.active=prod team4-0.0.1-SNAPSHOT.jar &
