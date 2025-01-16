@@ -117,15 +117,16 @@ public class CrawlerService {
 
     public List<String[]> parallelCrawling() {
         log.info("Starting parallel crawling...");
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
         List<Future<List<String[]>>> futures = new ArrayList<>();
 
-        // 특정 카테고리만 크롤링 (예: "상의")
-        String category = "상의";
-        String baseUrl = categoryUrls.get(category);
-    
-        // 병렬 작업 실행
-        futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
+        List<String> selectedCategories = new ArrayList<>(categoryUrls.keySet())
+                                        .subList(0, categoryUrls.size() / 2);
+
+        for (String category : selectedCategories) {
+            String baseUrl = categoryUrls.get(category);
+            futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
+        }
 
         List<String[]> allResults = new ArrayList<>();
         try {
@@ -144,7 +145,7 @@ public class CrawlerService {
         return allResults;
     }
 
-    @Scheduled(cron = "0 57 17 * * ?")
+    @Scheduled(cron = "0 10 22 * * ?")
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
