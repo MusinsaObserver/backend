@@ -116,34 +116,34 @@ public class CrawlerService {
     }
 
     public List<String[]> parallelCrawling() {
-        log.info("Starting parallel crawling...");
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
-        List<Future<List<String[]>>> futures = new ArrayList<>();
+    log.info("Starting parallel crawling for all categories...");
+    ExecutorService executorService = Executors.newFixedThreadPool(10); // 스레드 풀 크기 설정
+    List<Future<List<String[]>>> futures = new ArrayList<>();
 
-        List<String> selectedCategories = new ArrayList<>(categoryUrls.keySet())
-                                        .subList(0, categoryUrls.size() / 2);
+    // 모든 카테고리를 선택
+    List<String> selectedCategories = new ArrayList<>(categoryUrls.keySet());
 
-        for (String category : selectedCategories) {
-            String baseUrl = categoryUrls.get(category);
-            futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
-        }
-
-        List<String[]> allResults = new ArrayList<>();
-        try {
-            for (Future<List<String[]>> future : futures) {
-                try {
-                    allResults.addAll(future.get());
-                } catch (Exception e) {
-                    log.error("Error in parallel task", e);
-                }
-            }
-        } finally {
-            executorService.shutdown();
-        }
-
-        log.info("Parallel crawling completed. Total items: {}", allResults.size());
-        return allResults;
+    for (String category : selectedCategories) {
+        String baseUrl = categoryUrls.get(category);
+        futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
     }
+
+    List<String[]> allResults = new ArrayList<>();
+    try {
+        for (Future<List<String[]>> future : futures) {
+            try {
+                allResults.addAll(future.get());
+            } catch (Exception e) {
+                log.error("Error in parallel task", e);
+            }
+        }
+    } finally {
+        executorService.shutdown();
+    }
+
+    log.info("Parallel crawling for all categories completed. Total items: {}", allResults.size());
+    return allResults;
+}
 
     @Scheduled(cron = "0 10 22 * * ?")
     public void scheduleCrawling() {
