@@ -145,7 +145,7 @@ public class CrawlerService {
     }
 
     // 매일 아침 6시에 크롤링 실행
-    @Scheduled(cron = "0 0 15 * * ?")
+    @Scheduled(cron = "0 0 16 * * ?")
     public void scheduleCrawling() {
         System.out.println("아침 6시에 크롤링 작업 시작...");
         productService.createProduct(parallelCrawling());
