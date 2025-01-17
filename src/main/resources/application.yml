@@ -43,9 +43,6 @@ logging:
     name: /var/log/myapp/application.log # 로그 파일 저장 위치
   level:
     root: INFO # 전체 로그 레벨 설정 (INFO 이상만 출력)
-    org.springframework.security: DEBUG # Spring Security 디버그 로그
-    org.springframework.web: DEBUG # 웹 디버그 로그
-    org.springframework.security.oauth2: TRACE # OAuth2 추적 로그
 
 server:
   port: 8080
