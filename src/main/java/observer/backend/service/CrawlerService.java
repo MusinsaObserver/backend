@@ -72,40 +72,47 @@ public class CrawlerService {
 
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-
                 int responseCode = conn.getResponseCode();
-                log.debug("Response Code: {}", responseCode);
 
-                if (responseCode == 200) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
-
-                    JsonObject document = JsonParser.parseString(response.toString()).getAsJsonObject();
-                    JsonArray items = document.getAsJsonObject("data").getAsJsonArray("list");
-
-                    for (JsonElement itemElement : items) {
-                        JsonObject item = itemElement.getAsJsonObject();
-                        result.add(new String[]{
-                                String.valueOf(item.get("goodsNo").getAsInt()),
-                                category,
-                                item.get("brandName").getAsString(),
-                                item.get("goodsName").getAsString(),
-                                String.valueOf(item.get("price").getAsInt()),
-                                item.get("saleRate").getAsString(),
-                                String.valueOf(item.get("normalPrice").getAsInt()),
-                                item.get("goodsLinkUrl").getAsString(),
-                                item.get("thumbnail").getAsString()
-                        });
-                    }
-                } else {
+                if (responseCode != 200) {
                     log.warn("HTTP request failed. Status Code: {}", responseCode);
                     break;
                 }
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                JsonObject document = JsonParser.parseString(response.toString()).getAsJsonObject();
+                JsonArray items = document.getAsJsonObject("data").getAsJsonArray("list");
+
+                // 데이터가 없으면 종료
+                if (items.size() == 0) {
+                    log.info("No more items for category: {} at page {}", category, page);
+                    break;
+                }
+
+                for (JsonElement itemElement : items) {
+                    JsonObject item = itemElement.getAsJsonObject();
+                    result.add(new String[]{
+                            String.valueOf(item.get("goodsNo").getAsInt()),
+                            category,
+                            item.get("brandName").getAsString(),
+                            item.get("goodsName").getAsString(),
+                            String.valueOf(item.get("price").getAsInt()),
+                            item.get("saleRate").getAsString(),
+                            String.valueOf(item.get("normalPrice").getAsInt()),
+                            item.get("goodsLinkUrl").getAsString(),
+                            item.get("thumbnail").getAsString()
+                    });
+                }
+
+                // 요청 간 딜레이 추가 (100ms)
+                Thread.sleep(100);
             }
         } catch (Exception e) {
             log.error("Error occurred while crawling category: {}", category, e);
@@ -116,45 +123,46 @@ public class CrawlerService {
     }
 
     public List<String[]> parallelCrawling() {
-    log.info("Starting parallel crawling for all categories...");
-    ExecutorService executorService = Executors.newFixedThreadPool(5);
-    List<Future<List<String[]>>> futures = new ArrayList<>();
+        log.info("Starting parallel crawling for all categories...");
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        List<Future<List<String[]>>> futures = new ArrayList<>();
+    
+        // 모든 카테고리를 선택
+        List<String> selectedCategories = new ArrayList<>(categoryUrls.keySet());
 
-    // 모든 카테고리를 선택
-    List<String> selectedCategories = new ArrayList<>(categoryUrls.keySet());
-
-    for (String category : selectedCategories) {
-        String baseUrl = categoryUrls.get(category);
-        futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
-    }
-
-    List<String[]> allResults = new ArrayList<>();
-    try {
-        for (Future<List<String[]>> future : futures) {
-            try {
-                allResults.addAll(future.get());
-            } catch (Exception e) {
-                log.error("Error in parallel task", e);
-            }
+        for (String category : selectedCategories) {
+            String baseUrl = categoryUrls.get(category);
+            futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
         }
-    } finally {
-        executorService.shutdown();
+    
+        List<String[]> allResults = new ArrayList<>();
+        try {
+            for (Future<List<String[]>> future : futures) {
+                try {
+                    allResults.addAll(future.get());
+                } catch (Exception e) {
+                    log.error("Error in parallel task", e);
+                }
+            }
+        } finally {
+            executorService.shutdown();
+        }
+    
+        log.info("Parallel crawling for all categories completed. Total items: {}", allResults.size());
+        return allResults;
     }
 
-    log.info("Parallel crawling for all categories completed. Total items: {}", allResults.size());
-    return allResults;
-}
-
-    @Scheduled(cron = "0 56 14 * * ?")
+    @Scheduled(cron = "0 30 15 * * ?")
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
-            saveProductsInBatches(parallelCrawling(), 100);
+            saveProductsInBatches(parallelCrawling(), 200);
             log.info("Scheduled crawling completed.");
         } catch (Exception e) {
             log.error("Error during scheduled crawling", e);
         }
     }
+    
     public void saveProductsInBatches(List<String[]> products, int batchSize) {
         for (int i = 0; i < products.size(); i += batchSize) {
             List<String[]> batch = products.subList(i, Math.min(products.size(), i + batchSize));
