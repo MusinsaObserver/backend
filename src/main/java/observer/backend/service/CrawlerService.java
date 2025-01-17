@@ -66,7 +66,7 @@ public class CrawlerService {
         log.info("Starting crawling for category: {}", category);
 
         try {
-            for (int page = 1; page <= 10; page++) {
+            for (int page = 1; page <= 999999; page++) {
                 String url = String.format(baseUrl, page);
                 log.debug("Requesting URL: {}", url);
 
@@ -145,7 +145,7 @@ public class CrawlerService {
     return allResults;
 }
 
-    @Scheduled(cron = "0 18 14 * * ?")
+    @Scheduled(cron = "0 30 14 * * ?")
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
