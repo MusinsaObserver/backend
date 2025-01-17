@@ -117,7 +117,7 @@ public class CrawlerService {
 
     public List<String[]> parallelCrawling() {
     log.info("Starting parallel crawling for all categories...");
-    ExecutorService executorService = Executors.newFixedThreadPool(10);
+    ExecutorService executorService = Executors.newFixedThreadPool(5);
     List<Future<List<String[]>>> futures = new ArrayList<>();
 
     // 모든 카테고리를 선택
@@ -145,7 +145,7 @@ public class CrawlerService {
     return allResults;
 }
 
-    @Scheduled(cron = "0 5 14 * * ?")
+    @Scheduled(cron = "0 13 14 * * ?")
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
