@@ -64,19 +64,18 @@ public class CrawlerService {
     public List<String[]> ajaxCrawling(String category, String baseUrl) {
         List<String[]> result = new ArrayList<>();
         log.info("Starting crawling for category: {}", category);
-    
+
         try {
-            int page = 1;
-            while (true) {
+            for (int page = 1; page <= 999; page++) {
                 String url = String.format(baseUrl, page);
-                log.debug("Requesting URL for page {}: {}", page, url);
-    
+                log.debug("Requesting URL: {}", url);
+
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-    
+
                 int responseCode = conn.getResponseCode();
-                log.debug("Response Code for category {}: {}", category, responseCode);
-    
+                log.debug("Response Code: {}", responseCode);
+
                 if (responseCode == 200) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
@@ -85,15 +84,10 @@ public class CrawlerService {
                         response.append(line);
                     }
                     reader.close();
-    
+
                     JsonObject document = JsonParser.parseString(response.toString()).getAsJsonObject();
                     JsonArray items = document.getAsJsonObject("data").getAsJsonArray("list");
-    
-                    if (items.size() == 0) {
-                        log.info("No more items for category: {} at page {}", category, page);
-                        break;
-                    }
-    
+
                     for (JsonElement itemElement : items) {
                         JsonObject item = itemElement.getAsJsonObject();
                         result.add(new String[]{
@@ -108,20 +102,19 @@ public class CrawlerService {
                                 item.get("thumbnail").getAsString()
                         });
                     }
-    
-                    page++; // 다음 페이지로 이동
                 } else {
-                    log.warn("HTTP request failed for category {} on page {}. Status Code: {}", category, page, responseCode);
+                    log.warn("HTTP request failed. Status Code: {}", responseCode);
                     break;
                 }
             }
         } catch (Exception e) {
             log.error("Error occurred while crawling category: {}", category, e);
         }
-    
+
         log.info("Crawling completed for category: {}. Total items: {}", category, result.size());
         return result;
     }
+
     public List<String[]> parallelCrawling() {
     log.info("Starting parallel crawling for all categories...");
     ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -152,7 +145,7 @@ public class CrawlerService {
     return allResults;
 }
 
-    @Scheduled(cron = "0 51 19 * * ?")
+    @Scheduled(cron = "0 54 19 * * ?")
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
