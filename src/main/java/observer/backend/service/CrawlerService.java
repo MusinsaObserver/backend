@@ -158,7 +158,7 @@ public class CrawlerService {
         return allResults;
     }
 
-    @Scheduled(cron = "0 10 19 * * ?") // 매일 18시 40분 실행
+    @Scheduled(cron = "0 12 19 * * ?") // 매일 18시 40분 실행
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
