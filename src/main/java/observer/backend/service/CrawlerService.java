@@ -68,7 +68,7 @@ public class CrawlerService {
         try {
             for (int page = 1; ; page++) {
                 String url = String.format(baseUrl, page);
-                log.debug("Requesting URL: {}", url);
+                log.debug("Requesting URL for page {}: {}", page, url);
 
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
@@ -77,7 +77,7 @@ public class CrawlerService {
                 log.debug("Response Code for category {}: {}", category, responseCode);
 
                 if (responseCode != 200) {
-                    log.warn("HTTP request failed for category {}. Status Code: {}", category, responseCode);
+                    log.warn("HTTP request failed for category {} on page {}. Status Code: {}", category, page, responseCode);
                     break;
                 }
 
@@ -158,7 +158,7 @@ public class CrawlerService {
         return allResults;
     }
 
-    @Scheduled(cron = "0 23 19 * * ?") // 매일 18시 40분 실행
+    @Scheduled(cron = "0 30 19 * * ?") // 매일 18시 40분 실행
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
@@ -170,6 +170,7 @@ public class CrawlerService {
     }
 
     public void saveProductsInBatches(List<String[]> products, int batchSize) {
+        log.info("Saving products in batches...");
         for (int i = 0; i < products.size(); i += batchSize) {
             List<String[]> batch = products.subList(i, Math.min(products.size(), i + batchSize));
             try {
