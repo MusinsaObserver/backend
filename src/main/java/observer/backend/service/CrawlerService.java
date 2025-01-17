@@ -8,7 +8,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import observer.backend.entity.Category;
-import observer.backend.entity.Product;
 import observer.backend.repository.CategoryRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,9 +19,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 @Service
 @AllArgsConstructor
@@ -32,21 +28,7 @@ public class CrawlerService {
     private final CategoryRepository categoryRepository;
 
     private static final Map<String, String> categoryUrls = Map.ofEntries(
-            Map.entry("상의", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=001&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("아우터", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=002&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("바지", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=003&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("원피스/스커트", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=100&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("신발", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=103&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("가방", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=004&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("패션소품", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=101&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("속옷/홈웨어", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=026&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("뷰티", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=104&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("스포츠/레저", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=017&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("디지털/라이브", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=102&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("아웃렛", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=107&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("부티크", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=105&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("키즈", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=106&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("어스", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=108&caller=CATEGORY&page=%d&size=30")
+            Map.entry("상의", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=001&caller=CATEGORY&page=%d&size=30")
     );
 
     @PostConstruct
@@ -66,7 +48,7 @@ public class CrawlerService {
         log.info("Starting crawling for category: {}", category);
 
         try {
-            for (int page = 1; page <= 999999; page++) {
+            for (int page = 1; ; page++) {
                 String url = String.format(baseUrl, page);
                 log.debug("Requesting URL: {}", url);
 
@@ -111,8 +93,8 @@ public class CrawlerService {
                     });
                 }
 
-                // 요청 간 딜레이 추가 (100ms)
-                Thread.sleep(100);
+                // 요청 간 딜레이를 500ms로 설정
+                Thread.sleep(500);
             }
         } catch (Exception e) {
             log.error("Error occurred while crawling category: {}", category, e);
@@ -122,50 +104,27 @@ public class CrawlerService {
         return result;
     }
 
-    public List<String[]> parallelCrawling() {
-        log.info("Starting parallel crawling for a single category...");
-        ExecutorService executorService = Executors.newFixedThreadPool(1); // 스레드 풀 크기 설정
-        List<Future<List<String[]>>> futures = new ArrayList<>();
-        
-        // 특정 카테고리 선택 (예: "상의")
-        String category = "상의";
-        String baseUrl = categoryUrls.get(category);
-    
-        futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
-    
-        List<String[]> allResults = new ArrayList<>();
-        try {
-            for (Future<List<String[]>> future : futures) {
-                try {
-                    allResults.addAll(future.get());
-                } catch (Exception e) {
-                    log.error("Error in parallel task", e);
-                }
-            }
-        } finally {
-            executorService.shutdown();
-        }
-
-        log.info("Parallel crawling for category '{}' completed. Total items: {}", category, allResults.size());
-        return allResults;
-    }
-
-    @Scheduled(cron = "0 25 16 * * ?")
+    @Scheduled(cron = "0 15 17 * * ?") // 매일 아침 6시에 실행
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
-            saveProductsInBatches(parallelCrawling(), 200);
+            List<String[]> results = ajaxCrawling("상의", categoryUrls.get("상의"));
+            saveProductsInBatches(results, 100); // 배치 크기 100으로 설정
             log.info("Scheduled crawling completed.");
         } catch (Exception e) {
             log.error("Error during scheduled crawling", e);
         }
     }
-    
+
     public void saveProductsInBatches(List<String[]> products, int batchSize) {
         for (int i = 0; i < products.size(); i += batchSize) {
             List<String[]> batch = products.subList(i, Math.min(products.size(), i + batchSize));
-            productService.createProduct(batch);
-            log.info("Saved batch of {} products", batch.size());
+            try {
+                productService.createProduct(batch);
+                log.info("Saved batch of {} products", batch.size());
+            } catch (Exception e) {
+                log.error("Error saving batch of products", e);
+            }
         }
     }
 }
