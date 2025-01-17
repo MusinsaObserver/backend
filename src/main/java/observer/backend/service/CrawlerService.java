@@ -50,8 +50,12 @@ public class CrawlerService {
         log.info("Initializing categories...");
         if (categoryRepository.count() == 0) {
             for (String category : categoryUrls.keySet()) {
-                categoryRepository.save(new Category(category));
-                log.info("Category saved: {}", category);
+                try {
+                    categoryRepository.save(new Category(category));
+                    log.info("Category saved: {}", category);
+                } catch (Exception e) {
+                    log.error("Error saving category: {}", category, e);
+                }
             }
         }
         log.info("Category initialization completed.");
@@ -68,10 +72,12 @@ public class CrawlerService {
 
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
                 int responseCode = conn.getResponseCode();
+                log.debug("Response Code for category {}: {}", category, responseCode);
 
                 if (responseCode != 200) {
-                    log.warn("HTTP request failed. Status Code: {}", responseCode);
+                    log.warn("HTTP request failed for category {}. Status Code: {}", category, responseCode);
                     break;
                 }
 
@@ -93,17 +99,23 @@ public class CrawlerService {
 
                 for (JsonElement itemElement : items) {
                     JsonObject item = itemElement.getAsJsonObject();
-                    result.add(new String[]{
-                            String.valueOf(item.get("goodsNo").getAsInt()),
-                            category,
-                            item.get("brandName").getAsString(),
-                            item.get("goodsName").getAsString(),
-                            String.valueOf(item.get("price").getAsInt()),
-                            item.get("saleRate").getAsString(),
-                            String.valueOf(item.get("normalPrice").getAsInt()),
-                            item.get("goodsLinkUrl").getAsString(),
-                            item.get("thumbnail").getAsString()
-                    });
+                    try {
+                        String[] parsedItem = new String[]{
+                                String.valueOf(item.get("goodsNo").getAsInt()),
+                                category,
+                                item.get("brandName").getAsString(),
+                                item.get("goodsName").getAsString(),
+                                String.valueOf(item.get("price").getAsInt()),
+                                item.get("saleRate").getAsString(),
+                                String.valueOf(item.get("normalPrice").getAsInt()),
+                                item.get("goodsLinkUrl").getAsString(),
+                                item.get("thumbnail").getAsString()
+                        };
+                        result.add(parsedItem);
+                        log.debug("Parsed item: {}", (Object) parsedItem);
+                    } catch (Exception e) {
+                        log.error("Error parsing item for category {}: {}", category, e.getMessage(), e);
+                    }
                 }
 
                 // 요청 간 딜레이 추가 (200ms)
@@ -131,7 +143,9 @@ public class CrawlerService {
         try {
             for (Future<List<String[]>> future : futures) {
                 try {
-                    allResults.addAll(future.get());
+                    List<String[]> categoryResults = future.get();
+                    log.debug("Category crawling result size: {}", categoryResults.size());
+                    allResults.addAll(categoryResults);
                 } catch (Exception e) {
                     log.error("Error in parallel task", e);
                 }
@@ -144,7 +158,7 @@ public class CrawlerService {
         return allResults;
     }
 
-    @Scheduled(cron = "0 40 18 * * ?") // 매일 새벽 3시에 실행
+    @Scheduled(cron = "0 52 18 * * ?") // 매일 18시 40분 실행
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
