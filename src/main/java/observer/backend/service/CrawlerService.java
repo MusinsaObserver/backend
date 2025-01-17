@@ -8,7 +8,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import observer.backend.entity.Category;
-import observer.backend.entity.Product;
 import observer.backend.repository.CategoryRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -31,6 +30,7 @@ public class CrawlerService {
     private final ProductService productService;
     private final CategoryRepository categoryRepository;
 
+    // 무신사 카테고리 URL 목록
     private static final Map<String, String> categoryUrls = Map.ofEntries(
             Map.entry("상의", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=001&caller=CATEGORY&page=%d&size=30"),
             Map.entry("아우터", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=002&caller=CATEGORY&page=%d&size=30"),
@@ -42,11 +42,7 @@ public class CrawlerService {
             Map.entry("속옷/홈웨어", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=026&caller=CATEGORY&page=%d&size=30"),
             Map.entry("뷰티", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=104&caller=CATEGORY&page=%d&size=30"),
             Map.entry("스포츠/레저", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=017&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("디지털/라이브", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=102&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("아웃렛", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=107&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("부티크", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=105&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("키즈", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=106&caller=CATEGORY&page=%d&size=30"),
-            Map.entry("어스", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=108&caller=CATEGORY&page=%d&size=30")
+            Map.entry("디지털/라이브", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=102&caller=CATEGORY&page=%d&size=30")
     );
 
     @PostConstruct
@@ -54,8 +50,12 @@ public class CrawlerService {
         log.info("Initializing categories...");
         if (categoryRepository.count() == 0) {
             for (String category : categoryUrls.keySet()) {
-                categoryRepository.save(new Category(category));
-                log.info("Category saved: {}", category);
+                try {
+                    categoryRepository.save(new Category(category));
+                    log.info("Category saved: {}", category);
+                } catch (Exception e) {
+                    log.error("Error saving category: {}", category, e);
+                }
             }
         }
         log.info("Category initialization completed.");
@@ -66,7 +66,7 @@ public class CrawlerService {
         log.info("Starting crawling for category: {}", category);
 
         try {
-            for (int page = 1; page <= 10; page++) {
+            for (int page = 1; ; page++) {
                 String url = String.format(baseUrl, page);
                 log.debug("Requesting URL: {}", url);
 
@@ -74,23 +74,33 @@ public class CrawlerService {
                 conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
                 int responseCode = conn.getResponseCode();
-                log.debug("Response Code: {}", responseCode);
+                log.debug("Response Code for category {}: {}", category, responseCode);
 
-                if (responseCode == 200) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
+                if (responseCode != 200) {
+                    log.warn("HTTP request failed for category {}. Status Code: {}", category, responseCode);
+                    break;
+                }
 
-                    JsonObject document = JsonParser.parseString(response.toString()).getAsJsonObject();
-                    JsonArray items = document.getAsJsonObject("data").getAsJsonArray("list");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
 
-                    for (JsonElement itemElement : items) {
-                        JsonObject item = itemElement.getAsJsonObject();
-                        result.add(new String[]{
+                JsonObject document = JsonParser.parseString(response.toString()).getAsJsonObject();
+                JsonArray items = document.getAsJsonObject("data").getAsJsonArray("list");
+
+                if (items.size() == 0) {
+                    log.info("No more items for category: {} at page {}", category, page);
+                    break;
+                }
+
+                for (JsonElement itemElement : items) {
+                    JsonObject item = itemElement.getAsJsonObject();
+                    try {
+                        String[] parsedItem = new String[]{
                                 String.valueOf(item.get("goodsNo").getAsInt()),
                                 category,
                                 item.get("brandName").getAsString(),
@@ -100,12 +110,16 @@ public class CrawlerService {
                                 String.valueOf(item.get("normalPrice").getAsInt()),
                                 item.get("goodsLinkUrl").getAsString(),
                                 item.get("thumbnail").getAsString()
-                        });
+                        };
+                        result.add(parsedItem);
+                        log.debug("Parsed item: {}", (Object) parsedItem);
+                    } catch (Exception e) {
+                        log.error("Error parsing item for category {}: {}", category, e.getMessage(), e);
                     }
-                } else {
-                    log.warn("HTTP request failed. Status Code: {}", responseCode);
-                    break;
                 }
+
+                // 요청 간 딜레이 추가 (200ms)
+                Thread.sleep(200);
             }
         } catch (Exception e) {
             log.error("Error occurred while crawling category: {}", category, e);
@@ -116,50 +130,54 @@ public class CrawlerService {
     }
 
     public List<String[]> parallelCrawling() {
-    log.info("Starting parallel crawling for all categories...");
-    ExecutorService executorService = Executors.newFixedThreadPool(10);
-    List<Future<List<String[]>>> futures = new ArrayList<>();
+        log.info("Starting parallel crawling for all categories...");
+        ExecutorService executorService = Executors.newFixedThreadPool(3); // 스레드 풀 크기: 3
+        List<Future<List<String[]>>> futures = new ArrayList<>();
 
-    // 모든 카테고리를 선택
-    List<String> selectedCategories = new ArrayList<>(categoryUrls.keySet());
-
-    for (String category : selectedCategories) {
-        String baseUrl = categoryUrls.get(category);
-        futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
-    }
-
-    List<String[]> allResults = new ArrayList<>();
-    try {
-        for (Future<List<String[]>> future : futures) {
-            try {
-                allResults.addAll(future.get());
-            } catch (Exception e) {
-                log.error("Error in parallel task", e);
-            }
+        for (String category : categoryUrls.keySet()) {
+            String baseUrl = categoryUrls.get(category);
+            futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
         }
-    } finally {
-        executorService.shutdown();
+
+        List<String[]> allResults = new ArrayList<>();
+        try {
+            for (Future<List<String[]>> future : futures) {
+                try {
+                    List<String[]> categoryResults = future.get();
+                    log.debug("Category crawling result size: {}", categoryResults.size());
+                    allResults.addAll(categoryResults);
+                } catch (Exception e) {
+                    log.error("Error in parallel task", e);
+                }
+            }
+        } finally {
+            executorService.shutdown();
+        }
+
+        log.info("Parallel crawling for all categories completed. Total items: {}", allResults.size());
+        return allResults;
     }
 
-    log.info("Parallel crawling for all categories completed. Total items: {}", allResults.size());
-    return allResults;
-}
-
-    @Scheduled(cron = "0 56 18 * * ?")
+    @Scheduled(cron = "0 10 19 * * ?") // 매일 18시 40분 실행
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
-            saveProductsInBatches(parallelCrawling(), 100);
+            saveProductsInBatches(parallelCrawling(), 50); // 배치 크기: 50
             log.info("Scheduled crawling completed.");
         } catch (Exception e) {
             log.error("Error during scheduled crawling", e);
         }
     }
+
     public void saveProductsInBatches(List<String[]> products, int batchSize) {
         for (int i = 0; i < products.size(); i += batchSize) {
             List<String[]> batch = products.subList(i, Math.min(products.size(), i + batchSize));
-            productService.createProduct(batch);
-            log.info("Saved batch of {} products", batch.size());
+            try {
+                productService.createProduct(batch);
+                log.info("Saved batch of {} products", batch.size());
+            } catch (Exception e) {
+                log.error("Error saving batch of products", e);
+            }
         }
     }
 }
