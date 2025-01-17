@@ -12,6 +12,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          characterEncoding: UTF-8
 
   security:
     oauth2:
