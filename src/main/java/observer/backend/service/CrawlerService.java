@@ -117,7 +117,7 @@ public class CrawlerService {
 
     public List<String[]> parallelCrawling() {
     log.info("Starting parallel crawling for all categories...");
-    ExecutorService executorService = Executors.newFixedThreadPool(10); // 스레드 풀 크기 설정
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
     List<Future<List<String[]>>> futures = new ArrayList<>();
 
     // 모든 카테고리를 선택
@@ -145,14 +145,21 @@ public class CrawlerService {
     return allResults;
 }
 
-    @Scheduled(cron = "0 10 22 * * ?")
+    @Scheduled(cron = "0 5 14 * * ?")
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
-            productService.createProduct(parallelCrawling());
+            saveProductsInBatches(parallelCrawling(), 100);
             log.info("Scheduled crawling completed.");
         } catch (Exception e) {
             log.error("Error during scheduled crawling", e);
+        }
+    }
+    public void saveProductsInBatches(List<String[]> products, int batchSize) {
+        for (int i = 0; i < products.size(); i += batchSize) {
+            List<String[]> batch = products.subList(i, Math.min(products.size(), i + batchSize));
+            productService.createProduct(batch);
+            log.info("Saved batch of {} products", batch.size());
         }
     }
 }
