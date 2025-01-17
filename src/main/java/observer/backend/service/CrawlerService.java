@@ -123,17 +123,15 @@ public class CrawlerService {
     }
 
     public List<String[]> parallelCrawling() {
-        log.info("Starting parallel crawling for all categories...");
-        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        log.info("Starting parallel crawling for a single category...");
+        ExecutorService executorService = Executors.newFixedThreadPool(1); // 스레드 풀 크기 설정
         List<Future<List<String[]>>> futures = new ArrayList<>();
+        
+        // 특정 카테고리 선택 (예: "상의")
+        String category = "상의";
+        String baseUrl = categoryUrls.get(category);
     
-        // 모든 카테고리를 선택
-        List<String> selectedCategories = new ArrayList<>(categoryUrls.keySet());
-
-        for (String category : selectedCategories) {
-            String baseUrl = categoryUrls.get(category);
-            futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
-        }
+        futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
     
         List<String[]> allResults = new ArrayList<>();
         try {
@@ -147,12 +145,12 @@ public class CrawlerService {
         } finally {
             executorService.shutdown();
         }
-    
-        log.info("Parallel crawling for all categories completed. Total items: {}", allResults.size());
+
+        log.info("Parallel crawling for category '{}' completed. Total items: {}", category, allResults.size());
         return allResults;
     }
 
-    @Scheduled(cron = "0 30 15 * * ?")
+    @Scheduled(cron = "0 02 16 * * ?")
     public void scheduleCrawling() {
         log.info("Scheduled crawling started...");
         try {
