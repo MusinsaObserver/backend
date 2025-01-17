@@ -19,6 +19,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 @AllArgsConstructor
@@ -27,8 +30,19 @@ public class CrawlerService {
     private final ProductService productService;
     private final CategoryRepository categoryRepository;
 
+    // 무신사 카테고리 URL 목록
     private static final Map<String, String> categoryUrls = Map.ofEntries(
-            Map.entry("상의", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=001&caller=CATEGORY&page=%d&size=30")
+            Map.entry("상의", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=001&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("아우터", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=002&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("바지", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=003&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("원피스/스커트", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=100&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("신발", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=103&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("가방", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=004&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("패션소품", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=101&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("속옷/홈웨어", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=026&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("뷰티", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=104&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("스포츠/레저", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=017&caller=CATEGORY&page=%d&size=30"),
+            Map.entry("디지털/라이브", "https://api.musinsa.com/api2/dp/v1/plp/goods?gf=A&category=102&caller=CATEGORY&page=%d&size=30")
     );
 
     @PostConstruct
@@ -41,16 +55,6 @@ public class CrawlerService {
             }
         }
         log.info("Category initialization completed.");
-    }
-
-    public void sequentialCrawling() {
-        log.info("Starting sequential crawling...");
-        for (String category : categoryUrls.keySet()) {
-            String baseUrl = categoryUrls.get(category);
-            List<String[]> results = ajaxCrawling(category, baseUrl);
-            saveProductsInBatches(results, 50); // 배치 크기 50
-        }
-        log.info("Sequential crawling completed.");
     }
 
     public List<String[]> ajaxCrawling(String category, String baseUrl) {
@@ -82,7 +86,6 @@ public class CrawlerService {
                 JsonObject document = JsonParser.parseString(response.toString()).getAsJsonObject();
                 JsonArray items = document.getAsJsonObject("data").getAsJsonArray("list");
 
-                // 데이터가 없으면 종료
                 if (items.size() == 0) {
                     log.info("No more items for category: {} at page {}", category, page);
                     break;
@@ -103,8 +106,8 @@ public class CrawlerService {
                     });
                 }
 
-                // 요청 간 딜레이 추가 (500ms)
-                Thread.sleep(500);
+                // 요청 간 딜레이 추가 (200ms)
+                Thread.sleep(200);
             }
         } catch (Exception e) {
             log.error("Error occurred while crawling category: {}", category, e);
@@ -112,6 +115,44 @@ public class CrawlerService {
 
         log.info("Crawling completed for category: {}. Total items: {}", category, result.size());
         return result;
+    }
+
+    public List<String[]> parallelCrawling() {
+        log.info("Starting parallel crawling for all categories...");
+        ExecutorService executorService = Executors.newFixedThreadPool(3); // 스레드 풀 크기: 3
+        List<Future<List<String[]>>> futures = new ArrayList<>();
+
+        for (String category : categoryUrls.keySet()) {
+            String baseUrl = categoryUrls.get(category);
+            futures.add(executorService.submit(() -> ajaxCrawling(category, baseUrl)));
+        }
+
+        List<String[]> allResults = new ArrayList<>();
+        try {
+            for (Future<List<String[]>> future : futures) {
+                try {
+                    allResults.addAll(future.get());
+                } catch (Exception e) {
+                    log.error("Error in parallel task", e);
+                }
+            }
+        } finally {
+            executorService.shutdown();
+        }
+
+        log.info("Parallel crawling for all categories completed. Total items: {}", allResults.size());
+        return allResults;
+    }
+
+    @Scheduled(cron = "0 15 18 * * ?") // 매일 새벽 3시에 실행
+    public void scheduleCrawling() {
+        log.info("Scheduled crawling started...");
+        try {
+            saveProductsInBatches(parallelCrawling(), 50); // 배치 크기: 50
+            log.info("Scheduled crawling completed.");
+        } catch (Exception e) {
+            log.error("Error during scheduled crawling", e);
+        }
     }
 
     public void saveProductsInBatches(List<String[]> products, int batchSize) {
@@ -123,17 +164,6 @@ public class CrawlerService {
             } catch (Exception e) {
                 log.error("Error saving batch of products", e);
             }
-        }
-    }
-
-    @Scheduled(cron = "0 31 17 * * ?") // 매일 아침 6시에 실행
-    public void scheduleCrawling() {
-        log.info("Scheduled crawling started...");
-        try {
-            sequentialCrawling();
-            log.info("Scheduled crawling completed.");
-        } catch (Exception e) {
-            log.error("Error during scheduled crawling", e);
         }
     }
 }
