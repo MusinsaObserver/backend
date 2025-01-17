@@ -43,6 +43,16 @@ public class CrawlerService {
         log.info("Category initialization completed.");
     }
 
+    public void sequentialCrawling() {
+        log.info("Starting sequential crawling...");
+        for (String category : categoryUrls.keySet()) {
+            String baseUrl = categoryUrls.get(category);
+            List<String[]> results = ajaxCrawling(category, baseUrl);
+            saveProductsInBatches(results, 50); // 배치 크기 50
+        }
+        log.info("Sequential crawling completed.");
+    }
+
     public List<String[]> ajaxCrawling(String category, String baseUrl) {
         List<String[]> result = new ArrayList<>();
         log.info("Starting crawling for category: {}", category);
@@ -93,7 +103,7 @@ public class CrawlerService {
                     });
                 }
 
-                // 요청 간 딜레이를 500ms로 설정
+                // 요청 간 딜레이 추가 (500ms)
                 Thread.sleep(500);
             }
         } catch (Exception e) {
@@ -102,18 +112,6 @@ public class CrawlerService {
 
         log.info("Crawling completed for category: {}. Total items: {}", category, result.size());
         return result;
-    }
-
-    @Scheduled(cron = "0 15 17 * * ?") // 매일 아침 6시에 실행
-    public void scheduleCrawling() {
-        log.info("Scheduled crawling started...");
-        try {
-            List<String[]> results = ajaxCrawling("상의", categoryUrls.get("상의"));
-            saveProductsInBatches(results, 100); // 배치 크기 100으로 설정
-            log.info("Scheduled crawling completed.");
-        } catch (Exception e) {
-            log.error("Error during scheduled crawling", e);
-        }
     }
 
     public void saveProductsInBatches(List<String[]> products, int batchSize) {
@@ -125,6 +123,17 @@ public class CrawlerService {
             } catch (Exception e) {
                 log.error("Error saving batch of products", e);
             }
+        }
+    }
+
+    @Scheduled(cron = "0 31 17 * * ?") // 매일 아침 6시에 실행
+    public void scheduleCrawling() {
+        log.info("Scheduled crawling started...");
+        try {
+            sequentialCrawling();
+            log.info("Scheduled crawling completed.");
+        } catch (Exception e) {
+            log.error("Error during scheduled crawling", e);
         }
     }
 }
