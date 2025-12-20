@@ -7,6 +7,13 @@
 이 프로젝트는 무신사 스토어의 상품 데이터를 수집하여 **가격 변동 히스토리**를 저장하고, 가격 하락 시 사용자에게 **푸시 알림**을 발송하는 백엔드 시스템입니다.
 단순 HTML 파싱이 아닌 **Reverse Engineering을 통한 API 직접 호출** 방식을 적용했으며, **ExecutorService를 이용한 병렬 처리**로 수집 속도를 극대화했습니다.
 
+<br>
+
+## 🏗 System Architecture
+> **전체 시스템의 데이터 흐름과 병렬 처리 구조도입니다.**
+
+<img src="https://github.com/user-attachments/assets/d507a619-452c-47e0-bbc5-8ea3854fbff7" width="100%" alt="System Architecture Diagram">
+
 ---
 
 ## 🛠 Tech Stack
