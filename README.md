@@ -37,14 +37,6 @@
 * **Multi-threading:** `ExecutorService`와 `FixedThreadPool(5)`을 적용하여 15개 이상의 카테고리 데이터를 **병렬로 수집(Parallel Crawling)** 합니다.
 * **Batch Processing:** 수집된 데이터를 100개 단위로 나누어 저장(`saveProductsInBatches`)함으로써 DB I/O 부하를 최소화했습니다.
 
-### 2. 푸시 알림 시스템 (Notification System)
-* **APNs Integration:** `Java 11 HttpClient`를 사용하여 Apple Push Notification Service(APNs)와 직접 통신하는 로직을 구현했습니다.
-* **비동기 처리:** 가격 하락 감지 시, 사용자의 디바이스 토큰으로 즉시 알림 패킷을 전송합니다.
-
-### 3. 인증 및 보안 (Security)
-* **Apple OAuth2:** 애플 로그인(`Sign in with Apple`)의 공개키(Public Key) 검증 로직을 직접 구현하여 ID Token을 안전하게 복호화합니다.
-* **JWT:** 인증된 사용자에게 자체 Access Token을 발급하여 Stateless한 세션 관리를 수행합니다.
-
 ---
 
 ## 📂 Folder Structure
